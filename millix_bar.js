@@ -525,7 +525,7 @@ window.addEventListener('message', ({data}) => {
         case 'last_transaction_timestamp':
             millix_bar.onLastTransactionTimestampUpdate(data.data);
             break;
-        case 'total_advertisment_payment':
+        case 'total_advertisement_payment':
             millix_bar.onTotalAdvertisementPaymentUpdate(data.data);
             break;
         case 'new_transaction':

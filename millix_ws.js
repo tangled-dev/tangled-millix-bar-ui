@@ -283,7 +283,7 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'get_total_advertisement_payment':
             API.getTotalAdvertismentPayment()
-               .then(data => send_window_parent_post_message('total_advertisment_payment', data));
+               .then(data => send_window_parent_post_message('total_advertisement_payment', data));
             break;
         case 'read_stat_start':
             if (!readStatHandlerID) {
