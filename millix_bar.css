@@ -13,7 +13,7 @@ a {
 }
 
 .hidden-element {
-    display: none!important;
+    display: none !important;
     width: 0;
     border-width: 0;
     height: 0;
@@ -59,51 +59,51 @@ a {
 }
 
 .m-0 {
-    margin: 0!important;
+    margin: 0 !important;
 }
 
 .ml-0 {
-    margin-left: 0!important;
+    margin-left: 0 !important;
 }
 
 .ml-5 {
-    margin-left: 5px!important;
+    margin-left: 5px !important;
 }
 
 .ml-10 {
-    margin-left: 10px!important;
+    margin-left: 10px !important;
 }
 
 .ml-15 {
-    margin-left: 15px!important;
+    margin-left: 15px !important;
 }
 
 .mr-5 {
-    margin-right: 5px!important;
+    margin-right: 5px !important;
 }
 
 .mt-2 {
-    margin-top: 2px!important;
+    margin-top: 2px !important;
 }
 
 .mt-1 {
-    margin-top: 1px!important;
+    margin-top: 1px !important;
 }
 
 .mt-0 {
-    margin-top: 0px!important;
+    margin-top: 0px !important;
 }
 
 .mb-4 {
-    margin-bottom: 4px!important;
+    margin-bottom: 4px !important;
 }
 
 .pl-6 {
-    padding-left: 6px!important;
+    padding-left: 6px !important;
 }
 
 .pt-7 {
-    padding-top: 7px!important;
+    padding-top: 7px !important;
 }
 
 .move-left {
@@ -216,7 +216,7 @@ a {
 }
 
 .hidden-sm, .hidden {
-    display: none!important;
+    display: none !important;
 }
 
 /*@media only screen and (min-width: 45em) {
@@ -334,7 +334,7 @@ a {
 
 .btn-default:hover {
     color: #333;
-    background-color: rgba(210,210,210,0.1);
+    background-color: rgba(210, 210, 210, 0.1);
     border-color: #eee;
 }
 
@@ -452,7 +452,7 @@ input:focus {
     line-height: 30px;
     color: #b5b5b5;
     font-size: 13px;
-    margin-left: 0px!important;
+    margin-left: 0px !important;
     width: 111px;
     padding-left: 6px;
     padding-right: 6px;
@@ -554,27 +554,27 @@ input:focus {
 }
 
 .w16 {
-    width: 16px!important;
+    width: 16px !important;
 }
 
 .w21 {
-    width: 21px!important;
+    width: 21px !important;
 }
 
 .w30 {
-    width: 30px!important;
+    width: 30px !important;
 }
 
 .w182 {
-    width: 182px!important;
+    width: 182px !important;
 }
 
 .w54 {
-    width: 54px!important;
+    width: 54px !important;
 }
 
 .w90 {
-    width: 90px!important;
+    width: 90px !important;
 }
 
 #wallet_holder {
@@ -583,38 +583,41 @@ input:focus {
     max-width: 965px;
 }
 
-@-webkit-keyframes rotating /* Safari and Chrome */ {
+@-webkit-keyframes rotating /* Safari and Chrome */
+{
     from {
-      -webkit-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
     }
     to {
-      -webkit-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
     }
-  }
-  @keyframes rotating {
+}
+
+@keyframes rotating {
     from {
-      -ms-transform: rotate(0deg);
-      -moz-transform: rotate(0deg);
-      -webkit-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        -moz-transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
     }
     to {
-      -ms-transform: rotate(360deg);
-      -moz-transform: rotate(360deg);
-      -webkit-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        -moz-transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
     }
-  }
-  .rotating {
+}
+
+.rotating {
     -webkit-animation: rotating 2s linear infinite;
     -moz-animation: rotating 2s linear infinite;
     -ms-animation: rotating 2s linear infinite;
     -o-animation: rotating 2s linear infinite;
     animation: rotating 2s linear infinite;
-  }
+}
