@@ -35,3 +35,7 @@ setTimeout(() => {
         millix_bar.refreshThemeStyles({is_dark_theme: true});
     }
 }, 1000);
+
+$(function() {
+    $('#frame_millix_api').attr('src', './millix_ws.html');
+});
