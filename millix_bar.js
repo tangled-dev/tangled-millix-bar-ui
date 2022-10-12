@@ -1,4 +1,4 @@
-let CHILD_FRAME_ID = config.child_frame_id;
+let CHILD_FRAME_ID = typeof(config.child_frame_id) !== 'undefined' ? config.child_frame_id : 'chrome-untrusted://millix-ws/';
 
 cr.define('millix_bar', function() {
     'use strict';

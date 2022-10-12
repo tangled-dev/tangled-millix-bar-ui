@@ -3,7 +3,7 @@ class _API {
     static NODE_API        = `${_API.HOST}/api`;
     static HOST_TANGLED    = 'https://localhost:15555';
     static TANGLED_API     = `${_API.HOST_TANGLED}/api`;
-    static PARENT_FRAME_ID = config.parent_frame_id;
+    static PARENT_FRAME_ID = typeof (config.parent_frame_id) !== 'undefined' ? config.parent_frame_id : 'tangled://millix-bar';
 
     constructor() {
         this.nodeID             = undefined;
