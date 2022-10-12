@@ -1,40 +1,4 @@
-let CHILD_FRAME_ID = 'chrome-untrusted://millix-ws/';
-
-// UNCOMMENT ON DEV MODE ONLY
-/*
-CHILD_FRAME_ID = '*';
-const cr       = {
-    define(n, f) {
-        globalThis[n] = f();
-    },
-    addWebUIListener() {
-    }
-};
-
-const loadTimeData = {
-    getBoolean() {
-        return false;
-    }
-};
-
-chrome.send = () => {
-};
-
-const NODE_ID        = undefined;
-const NODE_SIGNATURE = undefined;
-if (!NODE_ID || !NODE_SIGNATURE) {
-    throw Error('NODE_ID and NODE_SIGNATURE must be defined');
-}
-setTimeout(() => {
-    millix_bar.connectToWallet({
-        node_id       : NODE_ID,
-        node_signature: NODE_SIGNATURE
-    });
-    millix_bar.activateWallet();
-    millix_bar.refreshThemeStyles({is_dark_theme: true});
-}, 1000);
-*/
-// END DEV MODE BLOCK
+let CHILD_FRAME_ID = config.child_frame_id;
 
 cr.define('millix_bar', function() {
     'use strict';
