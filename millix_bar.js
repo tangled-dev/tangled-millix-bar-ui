@@ -53,6 +53,7 @@ cr.define('millix_bar', function() {
         send_api_frame_content_window_post_message('api_config', apiConfig);
         send_api_frame_content_window_post_message('get_session');
         send_api_frame_content_window_post_message('api_check');
+        send_api_frame_content_window_post_message('start_check_latest_version');
     }
 
     function showMillixWallet() {
@@ -475,6 +476,32 @@ cr.define('millix_bar', function() {
         }
     }
 
+    function updateVersion(version) {
+        if (!version) {
+            return;
+        }
+        console.log(version);
+        //
+        // if (!nodeStat) {
+        //     $('#balance_stable').text('');
+        //     $('#balance_pending').text('');
+        //     $('#peer_count').text('');
+        //     $('#log_count').text('');
+        //     $('#backlog_count').text('');
+        //     $('#transaction_count').text('');
+        //     lastKnownTransaction = undefined;
+        // }
+        // else {
+        //     $('#balance_stable').text(nodeStat.balance.stable.toLocaleString());
+        //     $('#balance_pending').text(nodeStat.balance.unstable.toLocaleString());
+        //
+        //     $('#peer_count').text(nodeStat.network.peer_count.toLocaleString());
+        //     $('#log_count').text(nodeStat.log.log_count.toLocaleString());
+        //     $('#backlog_count').text(nodeStat.log.backlog_count.toLocaleString());
+        //     $('#transaction_count').text(nodeStat.transaction.transaction_wallet_count.toLocaleString());
+        // }
+    }
+
     // Return an object with all of the exports.
     return {
         initialize,
@@ -492,7 +519,8 @@ cr.define('millix_bar', function() {
         expandView,
         onTransaction,
         showNewAdvertisement,
-        onVisibilityChange
+        onVisibilityChange,
+        updateVersion
     };
 });
 
@@ -547,7 +575,10 @@ window.addEventListener('message', ({data}) => {
         case 'next_tangled_advertisement':
             const advertisement = data.data;
             millix_bar.showNewAdvertisement(advertisement);
-
+            break;
+        case 'available_version':
+            const version = data.data;
+            millix_bar.updateVersion(version)
             break;
     }
 

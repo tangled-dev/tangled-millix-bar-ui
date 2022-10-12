@@ -18,7 +18,6 @@ class _API {
         this.nodeSignature = nodeSignature;
     }
 
-
     getAuthenticatedMillixApiURL() {
         if (!this.nodeID || !this.nodeSignature) {
             throw Error('api is not ready');
@@ -269,6 +268,9 @@ class _API {
         return this.fetchApiTangled('/JXPRrbJlwOMnDzjr');
     }
 
+    getLatestMillixVersion() {
+        return this.fetchApiMillix('/WGem8x5aycBqFXWQ');
+    }
 }
 
 
@@ -314,6 +316,18 @@ function readStat() {
        })
        .then(() => readStatHandlerID = setTimeout(() => readStat(), 1000))
        .catch(() => readStatHandlerID = setTimeout(() => readStat(), 1000));
+}
+
+let check_latest_version_timeout_id = null;
+
+function check_latest_version() {
+    check_latest_version_timeout_id = true;
+    API.getLatestMillixVersion()
+       .then(response => {
+           send_window_parent_post_message('available_version', response);
+           check_latest_version_timeout_id = setTimeout(() => apiCheck(), 300);
+       })
+       .catch(() => check_latest_version_timeout_id = setTimeout(() => apiCheck(), 10));
 }
 
 let apiCheckHandlerID = null;
@@ -383,6 +397,9 @@ window.addEventListener('message', ({data}) => {
             if (!apiCheckHandlerID) {
                 setTimeout(() => apiCheck(), 15000); // start api check after 15s
             }
+            break;
+        case 'start_check_latest_version':
+            check_latest_version();
             break;
     }
 });
