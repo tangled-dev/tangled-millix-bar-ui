@@ -1,4 +1,4 @@
-let CHILD_FRAME_ID = typeof(config.child_frame_id) !== 'undefined' ? config.child_frame_id : 'chrome-untrusted://millix-ws/';
+let CHILD_FRAME_ID = typeof (config.child_frame_id) !== 'undefined' ? config.child_frame_id : 'chrome-untrusted://millix-ws/';
 
 cr.define('millix_bar', function() {
     'use strict';
@@ -34,30 +34,25 @@ cr.define('millix_bar', function() {
     }
 
     function onApiFrameReady() {
-        console.log('[onApiFrameReady]');
         millixAPIFrame = document.getElementById('frame_millix_api');
     }
 
+    function send_api_frame_content_window_post_message(type, data = null) {
+        return millixAPIFrame.contentWindow.postMessage({
+            type: type,
+            ...data
+        }, CHILD_FRAME_ID);
+    }
+
     function connectToWallet(apiConfig) {
-        console.log('[activateWallet]');
         if (!millixAPIFrame) {
             setTimeout(() => connectToWallet(apiConfig), 500);
             return;
         }
-        console.log('[activateWallet] sent');
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'api_config',
-            ...apiConfig
-        }, CHILD_FRAME_ID);
-
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'get_session'
-        }, CHILD_FRAME_ID);
-
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'api_check'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('api_config', apiConfig);
+        send_api_frame_content_window_post_message('get_session');
+        send_api_frame_content_window_post_message('api_check');
     }
 
     function showMillixWallet() {
@@ -88,7 +83,6 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        !!advertisementPaymentTimestampLast && console.log('last ad payment', moment(new Date(advertisementPaymentTimestampLast)).fromNow());
         if (!advertisement || !advertisement.advertisement_url) {
             const aMinuteAgo       = Date.now() - 60000;
             const twoMinutesAgo    = Date.now() - 120000;
@@ -206,9 +200,7 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'get_next_tangled_advertisement'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('get_next_tangled_advertisement');
         fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME);
     }
 
@@ -216,9 +208,7 @@ cr.define('millix_bar', function() {
         clearTimeout(transactionTimestampUpdateTimeout);
 
         if (!scheduleOnly) {
-            millixAPIFrame.contentWindow.postMessage({
-                type: 'get_last_transaction_timestamp'
-            }, CHILD_FRAME_ID);
+            send_api_frame_content_window_post_message('get_last_transaction_timestamp');
         }
 
         transactionTimestampUpdateTimeout = setTimeout(() => updateLastTransactionTimestamp(), 10000);
@@ -228,9 +218,7 @@ cr.define('millix_bar', function() {
         clearTimeout(totalAdvertisementPaymentTimeout);
 
         if (!scheduleOnly) {
-            millixAPIFrame.contentWindow.postMessage({
-                type: 'get_total_advertisement_payment'
-            }, CHILD_FRAME_ID);
+            send_api_frame_content_window_post_message('get_total_advertisement_payment');
         }
 
         totalAdvertisementPaymentTimeout = setTimeout(() => updateTotalAdvertisementPayment(), 60000);
@@ -260,10 +248,7 @@ cr.define('millix_bar', function() {
             refreshMillixWallet();
         }
 
-        console.log('[activateWallet]');
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'read_stat_start'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('read_stat_start');
         unlockFromBar = false;
 
         setTimeout(() => fetchAdvertisement(), 2000);
@@ -272,17 +257,13 @@ cr.define('millix_bar', function() {
     function deactivateWallet() {
         updateNodeStat(null);
         walletLocked = true;
-        console.log('[deactivateWallet]');
         $('#wallet').addClass('hidden');
         $('#btn_expand').addClass('hidden');
         $('#wallet_restart').addClass('hidden');
         $('#wallet_unlock').removeClass('hidden');
         expandView(false);
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'read_stat_stop'
-        }, CHILD_FRAME_ID);
-
+        send_api_frame_content_window_post_message('read_stat_stop');
         disableAdvertisementFetch();
     }
 
@@ -300,7 +281,6 @@ cr.define('millix_bar', function() {
         refreshMillixWallet();
         updateNodeStat(null);
         walletLocked = true;
-        console.log('[restartWallet]');
         $('#wallet').addClass('hidden');
         $('#btn_expand').addClass('hidden');
         $('#wallet_unlock').addClass('hidden');
@@ -407,11 +387,10 @@ cr.define('millix_bar', function() {
 
         // check if we should notify user
         lastKnownTransaction = lastTransaction;
-        millixAPIFrame.contentWindow.postMessage({
-            type          : 'get_transaction',
+        send_api_frame_content_window_post_message('get_transaction', {
             transaction_id: lastKnownTransaction.transaction_id,
             shard_id      : lastKnownTransaction.shard_id
-        }, CHILD_FRAME_ID);
+        });
     }
 
     function onLastTransactionTimestampUpdate(data) {
@@ -567,8 +546,8 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'next_tangled_advertisement':
             const advertisement = data.data;
-            console.log('[advertisement] new advertisement found', advertisement);
             millix_bar.showNewAdvertisement(advertisement);
+
             break;
     }
 
