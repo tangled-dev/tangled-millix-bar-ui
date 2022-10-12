@@ -1,9 +1,8 @@
 class _API {
-    static HOST            = 'https://localhost:5500';
-    static NODE_API        = `${_API.HOST}/api`;
-    static HOST_TANGLED    = 'https://localhost:15555';
-    static TANGLED_API     = `${_API.HOST_TANGLED}/api`;
-    static PARENT_FRAME_ID = typeof (config.parent_frame_id) !== 'undefined' ? config.parent_frame_id : 'tangled://millix-bar';
+    static HOST         = 'https://localhost:5500';
+    static NODE_API     = `${_API.HOST}/api`;
+    static HOST_TANGLED = 'https://localhost:15555';
+    static TANGLED_API  = `${_API.HOST_TANGLED}/api`;
 
     constructor() {
         this.nodeID             = undefined;
@@ -35,14 +34,14 @@ class _API {
             return fetch(`${_API.HOST}`)
                 .then(response => {
                     if (this.apiHealthCheckFail >= 4) {
-                        window.parent.postMessage({type: 'node_restarted'}, _API.PARENT_FRAME_ID);
+                        send_window_parent_post_message('node_restarted');
                     }
                     this.apiHealthCheckFail = 0;
                     return response.json();
                 }).catch(e => {
                     this.apiHealthCheckFail++;
                     if (this.apiHealthCheckFail === 4) {
-                        window.parent.postMessage({type: 'node_error'}, _API.PARENT_FRAME_ID);
+                        send_window_parent_post_message('node_error');
                     }
                     throw e;
                 });
@@ -198,20 +197,28 @@ class _API {
 const API = new _API();
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.parent.postMessage({type: 'initialize'}, _API.PARENT_FRAME_ID);
+    send_window_parent_post_message('initialize');
 });
 
 let readStatHandlerID    = null;
 let addressKeyIdentifier = null;
 
+function get_parent_frame_id() {
+    return typeof (config.parent_frame_id) !== 'undefined' ? config.parent_frame_id : 'tangled://millix-bar';
+}
+
+function send_window_parent_post_message(type, data = null) {
+    return window.parent.postMessage({
+        type: type,
+        data: data
+    }, get_parent_frame_id());
+}
+
 function readStat() {
     clearTimeout(readStatHandlerID);
     API.getNodeStat()
        .then(data => {
-           window.parent.postMessage({
-               type: 'node_stat',
-               data
-           }, _API.PARENT_FRAME_ID);
+           send_window_parent_post_message('node_stat', data);
 
            if (!addressKeyIdentifier) {
                return API.getSession()
@@ -219,19 +226,13 @@ function readStat() {
                              if (data.wallet) {
                                  addressKeyIdentifier = data.wallet.address_key_identifier;
                                  return API.getLastTransaction(addressKeyIdentifier)
-                                           .then(data => window.parent.postMessage({
-                                               type: 'last_transaction',
-                                               data: data[0]
-                                           }, _API.PARENT_FRAME_ID));
+                                           .then(data => send_window_parent_post_message('last_transaction', data[0]));
                              }
                          });
            }
 
            return API.getLastTransaction(addressKeyIdentifier)
-                     .then(data => window.parent.postMessage({
-                         type: 'last_transaction',
-                         data: data[0]
-                     }, _API.PARENT_FRAME_ID));
+                     .then(data => send_window_parent_post_message('last_transaction', data[0]));
        })
        .then(() => readStatHandlerID = setTimeout(() => readStat(), 1000))
        .catch(() => readStatHandlerID = setTimeout(() => readStat(), 1000));
@@ -258,10 +259,7 @@ window.addEventListener('message', ({data}) => {
                    if (data.wallet) {
                        addressKeyIdentifier = data.wallet.address_key_identifier;
                    }
-                   window.parent.postMessage({
-                       type: 'millix_session',
-                       data
-                   }, _API.PARENT_FRAME_ID);
+                   send_window_parent_post_message('millix_session', data);
                }).catch(_ => setTimeout(() => window.postMessage({type: 'get_session'}), 1000));
             break;
         case 'new_session':
@@ -270,34 +268,22 @@ window.addEventListener('message', ({data}) => {
                    if (data.wallet) {
                        addressKeyIdentifier = data.wallet.address_key_identifier;
                    }
-                   window.parent.postMessage({
-                       type: 'millix_session',
-                       data
-                   }, _API.PARENT_FRAME_ID);
+                   send_window_parent_post_message('millix_session', data);
                });
             break;
         case 'get_transaction':
             API.getTransaction(data.transaction_id, data.shard_id)
                .then(data => {
-                   window.parent.postMessage({
-                       type: 'new_transaction',
-                       data
-                   }, _API.PARENT_FRAME_ID);
+                   send_window_parent_post_message('new_transaction', data);
                });
             break;
         case 'get_last_transaction_timestamp':
             API.getLastTransactionTimestamp()
-               .then(data => window.parent.postMessage({
-                   type: 'last_transaction_timestamp',
-                   data
-               }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('last_transaction_timestamp', data));
             break;
         case 'get_total_advertisement_payment':
             API.getTotalAdvertismentPayment()
-               .then(data => window.parent.postMessage({
-                   type: 'total_advertisment_payment',
-                   data
-               }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('total_advertisment_payment', data));
             break;
         case 'read_stat_start':
             if (!readStatHandlerID) {
@@ -312,14 +298,8 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'get_next_tangled_advertisement':
             API.getNextAdvertisementToRender()
-               .then(data => window.parent.postMessage({
-                   type: 'next_tangled_advertisement',
-                   data
-               }, _API.PARENT_FRAME_ID))
-               .catch(() => window.parent.postMessage({
-                   type: 'next_tangled_advertisement',
-                   data: null
-               }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('next_tangled_advertisement', data))
+               .catch(() => send_window_parent_post_message('next_tangled_advertisement'));
             break;
         case 'api_check':
             if (!apiCheckHandlerID) {
