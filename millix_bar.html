@@ -15,14 +15,10 @@
     <script src="millix_bar.js"></script>
 </head>
 
-<body style="font-family:Arial, Helvetica, sans-serif;min-width:700px;" class="noselect">
-<div class="container ml-0 h-50">
-    <div class="row h-50">
-        <div class="col-4 m-0 h-50" style="width: 255px;" id="wallet_holder">
-            <a class="arrow-icon hidden" id="btn_expand">
-                <span class="left-bar"></span>
-                <span class="right-bar"></span>
-            </a>
+<body class="noselect">
+<div class="container">
+    <div class="advertisement_bar_container">
+        <div id="status_container" class="status_container">
             <div class="col-9 m-0 w182 mt-1 pl-6 h-50 hidden" id="wallet_unlock">
                 <div class="row btn btn-default btn-unlock">
                     <div class="col-1 m-0 mr-0 w21 left">
@@ -215,14 +211,24 @@
                     </div>
                 </div>
             </div>
+            <a class="arrow_icon hidden" id="btn_expand_status_area">
+                <span class="left-bar"></span>
+                <span class="right-bar"></span>
+            </a>
         </div>
-        <div id="ads_holder h-50 pt-7" class="col-8 m-0 ads-slider">
-            <span><a id="advertisement_headline"></a></span>
-            <span><a id="advertisement_deck"></a></span>
+        <div id="advertisement_container" class="advertisement_container">
+            <div><a id="advertisement_headline"></a></div>
+            <div><a id="advertisement_deck"></a></div>
+        </div>
+        <div class="version_status hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+                <path d="M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512zm11.3-395.3l112 112c4.6 4.6 5.9 11.5 3.5 17.4s-8.3 9.9-14.8 9.9H304v96c0 17.7-14.3 32-32 32H240c-17.7 0-32-14.3-32-32V256H144c-6.5 0-12.3-3.9-14.8-9.9s-1.1-12.9 3.5-17.4l112-112c6.2-6.2 16.4-6.2 22.6 0z"/>
+            </svg>
         </div>
     </div>
 </div>
-<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden-element" onload="millix_bar.onApiFrameReady()"></iframe>
+<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden" onload="millix_bar.onApiFrameReady()"></iframe>
 </body>
 
 </html>

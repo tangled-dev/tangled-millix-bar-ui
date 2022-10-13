@@ -132,7 +132,7 @@ cr.define('millix_bar', function() {
             $targetPhrase.css('font-weight', '');
             $targetPhrase.css('color', '');
 
-            if ($('.arrow-icon').hasClass('open')) { //ads container not visible
+            if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
                 return;
             }
 
@@ -196,7 +196,7 @@ cr.define('millix_bar', function() {
     function fetchAdvertisement() {
         clearTimeout(fetchAdvertisementTimeout);
 
-        if ($('.arrow-icon').hasClass('open')) { //ads container not visible
+        if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
             fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME_EMPTY);
             return;
         }
@@ -240,7 +240,7 @@ cr.define('millix_bar', function() {
         $('#wallet_unlock').addClass('hidden');
         $('#wallet_restart').addClass('hidden');
         $('#wallet').removeClass('hidden');
-        $('#btn_expand').removeClass('hidden');
+        $('#btn_expand_status_area').removeClass('hidden');
 
         walletLocked = false;
         updateNodeStat(null);
@@ -259,7 +259,7 @@ cr.define('millix_bar', function() {
         updateNodeStat(null);
         walletLocked = true;
         $('#wallet').addClass('hidden');
-        $('#btn_expand').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
         $('#wallet_restart').addClass('hidden');
         $('#wallet_unlock').removeClass('hidden');
         expandView(false);
@@ -283,7 +283,7 @@ cr.define('millix_bar', function() {
         updateNodeStat(null);
         walletLocked = true;
         $('#wallet').addClass('hidden');
-        $('#btn_expand').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
         $('#wallet_unlock').addClass('hidden');
         let counter = 10;
 
@@ -430,24 +430,20 @@ cr.define('millix_bar', function() {
     }
 
     function expandView(expanded) {
-        const $arrow           = $('.arrow-icon');
-        const $adsHolder       = $('#ads_holder');
-        const $walletHolder    = $('#wallet_holder');
-        const $expandableViews = $('.expandable-view');
+        const btn_expand_status_area = $('#btn_expand_status_area');
+        const $adsHolder             = $('#advertisement_container');
+        const balance                = $('#status_container');
+        const $expandableViews       = $('.expandable-view');
 
         if (expanded) {
-            $arrow.addClass('open');
+            btn_expand_status_area.addClass('open');
             $adsHolder.hide();
-            $walletHolder.css('width', '');
-            $walletHolder[0].classList.replace('col-4', 'col-12');
             $('body').css('min-width', '');
             $expandableViews.removeClass('hidden');
         }
         else {
-            $arrow.removeClass('open');
+            btn_expand_status_area.removeClass('open');
             $expandableViews.addClass('hidden');
-            $walletHolder[0].classList.replace('col-12', 'col-4');
-            $walletHolder.css('width', '255px');
             $('body').css('min-width', '700px');
             $adsHolder.show();
         }
@@ -578,7 +574,7 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'available_version':
             const version = data.data;
-            millix_bar.updateVersion(version)
+            millix_bar.updateVersion(version);
             break;
     }
 
@@ -589,7 +585,7 @@ document.addEventListener('DOMContentLoaded', millix_bar.initialize);
 document.addEventListener('visibilitychange', millix_bar.onVisibilityChange);
 
 $(document).ready(() => {
-    $('.arrow-icon').click(function() {
+    $('#btn_expand_status_area').click(function() {
         const $this = $(this);
         if ($this.hasClass('open')) {
             millix_bar.expandView(false);

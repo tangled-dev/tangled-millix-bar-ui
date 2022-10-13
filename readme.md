@@ -1,9 +1,9 @@
 **uncomment this millix_bar.html:226<br>**
-<iframe id="frame_millix_api" src="./millix_ws.html" class="hidden-element"
+<iframe id="frame_millix_api" src="./millix_ws.html" class="hidden"
 onload="millix_bar.onApiFrameReady()"></iframe>
 
 **comment this millix_bar.html:227<br>**
-<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden-element"
+<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden"
 onload="millix_bar.onApiFrameReady()"></iframe>
 ****
 **comment millix_ws.js:6<br>**

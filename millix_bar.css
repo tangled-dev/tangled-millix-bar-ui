@@ -1,23 +1,80 @@
 html, body {
-    height: 50px;
-    margin: 0px;
-    overflow: hidden;
+    font-size: 14px;
+    margin: 0;
 }
 
 body {
-    font-size: 12px;
+    font-family: Arial, Helvetica, sans-serif;
+    min-width: 700px;
 }
 
 a {
     color: #333;
 }
 
-.hidden-element {
-    display: none !important;
-    width: 0;
-    border-width: 0;
-    height: 0;
+/* -------------------------------------------------------- reviewed above ---------------------------------------------------------------------- */
+
+.container {
+    display: flex;
+    overflow: hidden;
+    height: 3.57rem;
+    width: 100%;
 }
+
+.advertisement_bar_container {
+    display: flex;
+    width: 100%;
+}
+
+.advertisement_bar_container .status_container {
+    display: flex;
+    position: relative;
+    flex: 0 0 18rem;
+    max-width: 70rem;
+}
+
+.advertisement_bar_container .advertisement_container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 57.15rem;
+    overflow: hidden;
+    padding-left: 1rem;
+    position: relative;
+    width: 100%;
+}
+
+.advertisement_bar_container .advertisement_container > div {
+    overflow: hidden;
+}
+
+.arrow_icon {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    margin-left: auto;
+    width: 1.66rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.version_status {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 1rem;
+}
+
+.version_status > svg {
+    fill: #9400ce;
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+/* -------------------------------------------------------- reviewed above ---------------------------------------------------------------------- */
+
 
 .noselect {
     -webkit-touch-callout: none;
@@ -134,18 +191,6 @@ a {
 
 /* ==== GRID SYSTEM ==== */
 
-.container {
-    display: flex;
-    width: 100%;
-    height: 50px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.container [class^="row"] {
-    align-self: center;
-}
-
 .row {
     position: relative;
     width: 100%;
@@ -215,13 +260,6 @@ a {
     clear: both;
 }
 
-.hidden-sm, .hidden {
-    display: none !important;
-}
-
-/*@media only screen and (min-width: 45em) {
-     720px }*/
-
 .col-1 {
     width: 4.33%;
 }
@@ -270,16 +308,11 @@ a {
     width: 96%;
 }
 
-.hidden-sm {
-    display: block;
-}
-
 .btn {
     padding: 2px 1px 2px 1px;
     margin-bottom: 0;
     border-radius: 2px;
     min-width: 45px;
-    display: inline-block;
     text-decoration: none;
     text-align: center;
     white-space: nowrap;
@@ -405,25 +438,6 @@ input:focus {
     padding-left: 10px;
 }
 
-.ads-slider {
-    height: 50px;
-    padding-left: 50px;
-    padding-top: 7px;
-    max-width: 800px;
-    overflow: hidden;
-    position: relative;
-}
-
-.ads-slider span {
-    font-size: 1.2em;
-    width: 100%;
-    margin: 0 auto;
-    text-align: left;
-    display: block;
-    max-height: 18px;
-    overflow: hidden;
-}
-
 #advertisement_deck {
     text-decoration: none;
     font-size: 14px;
@@ -480,18 +494,69 @@ input:focus {
     }
 }
 
-.arrow-icon {
-    display: block;
-    position: absolute;
-    right: -20px;
-    top: 0px;
-    cursor: pointer;
-    float: right;
-    z-index: 10;
-    width: 20px;
-    height: 50px;
-    border-radius: 4px;
+.w16 {
+    width: 16px !important;
 }
+
+.w21 {
+    width: 21px !important;
+}
+
+.w30 {
+    width: 30px !important;
+}
+
+.w182 {
+    width: 182px !important;
+}
+
+.w54 {
+    width: 54px !important;
+}
+
+.w90 {
+    width: 90px !important;
+}
+
+@-webkit-keyframes rotating /* Safari and Chrome */
+{
+    from {
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rotating {
+    from {
+        -ms-transform: rotate(0deg);
+        -moz-transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    to {
+        -ms-transform: rotate(360deg);
+        -moz-transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+.rotating {
+    -webkit-animation: rotating 2s linear infinite;
+    -moz-animation: rotating 2s linear infinite;
+    -ms-animation: rotating 2s linear infinite;
+    -o-animation: rotating 2s linear infinite;
+    animation: rotating 2s linear infinite;
+}
+
 
 .left-bar {
     position: absolute;
@@ -551,73 +616,4 @@ input:focus {
 .open .right-bar:after {
     transform-origin: center center;
     transform: rotate(70deg);
-}
-
-.w16 {
-    width: 16px !important;
-}
-
-.w21 {
-    width: 21px !important;
-}
-
-.w30 {
-    width: 30px !important;
-}
-
-.w182 {
-    width: 182px !important;
-}
-
-.w54 {
-    width: 54px !important;
-}
-
-.w90 {
-    width: 90px !important;
-}
-
-#wallet_holder {
-    /*border-right: #5c5c5c solid 1px;*/
-    position: relative;
-    max-width: 965px;
-}
-
-@-webkit-keyframes rotating /* Safari and Chrome */
-{
-    from {
-        -webkit-transform: rotate(0deg);
-        -o-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-    to {
-        -webkit-transform: rotate(360deg);
-        -o-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes rotating {
-    from {
-        -ms-transform: rotate(0deg);
-        -moz-transform: rotate(0deg);
-        -webkit-transform: rotate(0deg);
-        -o-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-    to {
-        -ms-transform: rotate(360deg);
-        -moz-transform: rotate(360deg);
-        -webkit-transform: rotate(360deg);
-        -o-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-
-.rotating {
-    -webkit-animation: rotating 2s linear infinite;
-    -moz-animation: rotating 2s linear infinite;
-    -ms-animation: rotating 2s linear infinite;
-    -o-animation: rotating 2s linear infinite;
-    animation: rotating 2s linear infinite;
 }
