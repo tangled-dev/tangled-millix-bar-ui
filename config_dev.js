@@ -36,6 +36,15 @@ setTimeout(() => {
     }
 }, 1000);
 
-$(function() {
-    $('#frame_millix_api').attr('src', './millix_ws.html');
-});
+function replace_frame_millix_api_src() {
+    if (typeof ($) !== 'undefined') {
+        $(function() {
+            $('#frame_millix_api').attr('src', './millix_ws.html');
+        });
+    }
+    else {
+        setTimeout(replace_frame_millix_api_src, 1000);
+    }
+}
+
+replace_frame_millix_api_src();
