@@ -82,11 +82,25 @@ a:hover {
     display: none !important;
 }
 
-.update_version_container {
+.status_area_right {
     display: flex;
     align-items: center;
     margin-left: auto;
     margin-right: 1rem;
+}
+
+.status_area_right svg {
+    height: 1rem;
+    width: 1rem;
+}
+
+.status_area_right > *:not(:last-child) {
+    margin-right: 1rem;
+}
+
+.status_area_right > .status_item {
+    display: flex;
+    flex-flow: column;
 }
 
 .update_version_link {
@@ -94,13 +108,21 @@ a:hover {
     align-items: center;
 }
 
-.update_version_link > svg {
-    height: 1rem;
-    width: 1rem;
-}
 
 .labeled > svg {
     margin-right: 0.3rem;
+}
+
+.status-danger {
+    color: #db524b;
+}
+
+.status-warning {
+    color: #f7af3e;
+}
+
+.status-success {
+    color: #1bbf89;
 }
 
 /* -------------------------------------------------------- reviewed above ---------------------------------------------------------------------- */

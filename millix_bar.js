@@ -477,7 +477,7 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        $('.update_version_container').removeClass('hidden');
+        $('.update_version_link').removeClass('hidden');
         $('.latest_available_version').html(version.version_available);
     }
 
