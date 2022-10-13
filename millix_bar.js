@@ -65,8 +65,8 @@ cr.define('millix_bar', function() {
     }
 
     function showNewAdvertisement(advertisement) {
-        const $headline     = $('#advertisement_headline');
-        const $targetPhrase = $('#advertisement_deck');
+        const $headline     = $('.advertisement_headline');
+        const $targetPhrase = $('.advertisement_deck');
 
         if (walletLocked) {
             $headline.text('');
@@ -476,26 +476,9 @@ cr.define('millix_bar', function() {
         if (!version) {
             return;
         }
-        console.log(version);
-        //
-        // if (!nodeStat) {
-        //     $('#balance_stable').text('');
-        //     $('#balance_pending').text('');
-        //     $('#peer_count').text('');
-        //     $('#log_count').text('');
-        //     $('#backlog_count').text('');
-        //     $('#transaction_count').text('');
-        //     lastKnownTransaction = undefined;
-        // }
-        // else {
-        //     $('#balance_stable').text(nodeStat.balance.stable.toLocaleString());
-        //     $('#balance_pending').text(nodeStat.balance.unstable.toLocaleString());
-        //
-        //     $('#peer_count').text(nodeStat.network.peer_count.toLocaleString());
-        //     $('#log_count').text(nodeStat.log.log_count.toLocaleString());
-        //     $('#backlog_count').text(nodeStat.log.backlog_count.toLocaleString());
-        //     $('#transaction_count').text(nodeStat.transaction.transaction_wallet_count.toLocaleString());
-        // }
+
+        $('.update_version_container').removeClass('hidden');
+        $('.latest_available_version').html(version.version_available);
     }
 
     // Return an object with all of the exports.
