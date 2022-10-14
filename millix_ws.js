@@ -1,16 +1,12 @@
 class _API {
-    static HOST = 'https://localhost:5500';
-    static NODE_API = `${_API.HOST}/api`;
+    static HOST         = 'https://localhost:5500';
+    static NODE_API     = `${_API.HOST}/api`;
     static HOST_TANGLED = 'https://localhost:15555';
-    static TANGLED_API = `${_API.HOST_TANGLED}/api`;
-    static PARENT_FRAME_ID = 'tangled://millix-bar';
-    // UNCOMMENT ON DEV MODE: NOTE REMOVE THE LINE ABOVE
-    // static PARENT_FRAME_ID = '*';
-    // END DEV MODE BLOCK
+    static TANGLED_API  = `${_API.HOST_TANGLED}/api`;
 
     constructor() {
-        this.nodeID = undefined;
-        this.nodeSignature = undefined;
+        this.nodeID             = undefined;
+        this.nodeSignature      = undefined;
         this.apiHealthCheckFail = 0;
     }
 
@@ -20,6 +16,95 @@ class _API {
 
     setNodeSignature(nodeSignature) {
         this.nodeSignature = nodeSignature;
+    }
+
+    getAuthenticatedMillixApiURL() {
+        if (!this.nodeID || !this.nodeSignature) {
+            throw Error('api is not ready');
+        }
+        return `${_API.NODE_API}/${this.nodeID}/${this.nodeSignature}`;
+    }
+
+    getTangledApiURL() {
+        return _API.TANGLED_API;
+    }
+
+    fetchApiMillix(url, result_param = {}, method = 'GET', is_multipart = undefined, is_image_response_type = false) {
+        try {
+            const absolute_url = this.getAuthenticatedMillixApiURL() + url;
+            return this.fetchApi(absolute_url, result_param, method, is_multipart, is_image_response_type);
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    fetchApiTangled(url, result_param = {}, method = 'GET') {
+        const absolute_url = this.getTangledApiURL() + url;
+
+        return this.fetchApi(absolute_url, result_param, method);
+    }
+
+    fetchApi(url, result_param = {}, method = 'GET', is_multipart = undefined, is_image_response_type = false) {
+        let data = {};
+        if (method === 'POST') {
+            if (!is_multipart) {
+                data = {
+                    method : method,
+                    headers: {'Content-Type': 'application/json'},
+                    body   : JSON.stringify(result_param)
+                };
+            }
+            else {
+                const form_data = new FormData();
+                _.each(_.keys(result_param), key => {
+                    if (result_param[key] instanceof File) {
+                        form_data.append(key, result_param[key]);
+                        return;
+                    }
+
+                    form_data.append(key, JSON.stringify(result_param[key]));
+                });
+                data = {
+                    method: method,
+                    body  : form_data
+                };
+            }
+        }
+        else {
+            let param_string = '';
+            if (result_param) {
+                const param_array = [];
+                Object.keys(result_param).forEach(function(param_key) {
+                    let value = result_param[param_key];
+                    if (_.isArray(value) || typeof (value) === 'object') {
+                        value = encodeURIComponent(JSON.stringify(value));
+                    }
+
+                    param_array.push(param_key + '=' + value);
+                });
+                if (param_array.length > 0) {
+                    param_string = '?' + param_array.join('&');
+                }
+                url += param_string;
+            }
+        }
+
+        return fetch(url, data)
+            .then(response => {
+                if (is_image_response_type) {
+                    return response;
+                }
+
+                return response.ok ? response.json() : Promise.reject(response);
+            })
+            .catch(error => {
+                return Promise.reject(error);
+            })
+            .catch(_ => Promise.reject({
+                api_status : 'fail',
+                api_message: `request error`
+            })); // in case of failed request (e.g. connection refused) it prevents app from crash
     }
 
     getAuthenticatedURL() {
@@ -38,14 +123,14 @@ class _API {
             return fetch(`${_API.HOST}`)
                 .then(response => {
                     if (this.apiHealthCheckFail >= 4) {
-                        window.parent.postMessage({ type: 'node_restarted' }, _API.PARENT_FRAME_ID);
+                        send_window_parent_post_message('node_restarted');
                     }
                     this.apiHealthCheckFail = 0;
                     return response.json();
                 }).catch(e => {
                     this.apiHealthCheckFail++;
                     if (this.apiHealthCheckFail === 4) {
-                        window.parent.postMessage({ type: 'node_error' }, _API.PARENT_FRAME_ID);
+                        send_window_parent_post_message('node_error');
                     }
                     throw e;
                 });
@@ -169,76 +254,92 @@ class _API {
         try {
             return fetch(this.getTangledURL() + '/LMCqwVXTLS7VRWPT')
                 .then(response => response.json());
-        } catch (e) {
-            return Promise.reject(e)
+        }
+        catch (e) {
+            return Promise.reject(e);
         }
     }
 
     getLastTransactionTimestamp() {
-        try {
-            return fetch(this.getTangledURL() + `/AQ82j88MiEyoe3zi`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiTangled('/AQ82j88MiEyoe3zi');
     }
 
     getTotalAdvertismentPayment() {
-        try {
-            return fetch(this.getTangledURL() + `/JXPRrbJlwOMnDzjr`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiTangled('/JXPRrbJlwOMnDzjr');
     }
-    
+
+    getLatestMillixVersion() {
+        return this.fetchApiMillix('/WGem8x5aycBqFXWQ');
+    }
 }
+
 
 const API = new _API();
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.parent.postMessage({ type: "initialize" }, _API.PARENT_FRAME_ID);
+    send_window_parent_post_message('initialize');
 });
 
-
-let readStatHandlerID = null;
+let readStatHandlerID    = null;
 let addressKeyIdentifier = null;
+
+function get_parent_frame_id() {
+    return typeof (config.parent_frame_id) !== 'undefined' ? config.parent_frame_id : 'tangled://millix-bar';
+}
+
+function send_window_parent_post_message(type, data = null) {
+    return window.parent.postMessage({
+        type: type,
+        data: data
+    }, get_parent_frame_id());
+}
+
 function readStat() {
     clearTimeout(readStatHandlerID);
     API.getNodeStat()
-        .then(data => {
-            window.parent.postMessage({ type: "node_stat", data }, _API.PARENT_FRAME_ID);
+       .then(data => {
+           send_window_parent_post_message('node_stat', data);
 
-            if (!addressKeyIdentifier) {
-                return API.getSession()
-                    .then(data => {
-                        if (data.wallet) {
-                            addressKeyIdentifier = data.wallet.address_key_identifier;
-                            return API.getLastTransaction(addressKeyIdentifier)
-                                .then(data => window.parent.postMessage({ type: "last_transaction", data: data[0] }, _API.PARENT_FRAME_ID))
-                        }
-                    });
-            }
+           if (!addressKeyIdentifier) {
+               return API.getSession()
+                         .then(data => {
+                             if (data.wallet) {
+                                 addressKeyIdentifier = data.wallet.address_key_identifier;
+                                 return API.getLastTransaction(addressKeyIdentifier)
+                                           .then(data => send_window_parent_post_message('last_transaction', data[0]));
+                             }
+                         });
+           }
 
-            return API.getLastTransaction(addressKeyIdentifier)
-                .then(data => window.parent.postMessage({ type: "last_transaction", data: data[0] }, _API.PARENT_FRAME_ID))
-        })
-        .then(() => readStatHandlerID = setTimeout(() => readStat(), 1000))
-        .catch(() => readStatHandlerID = setTimeout(() => readStat(), 1000));
+           return API.getLastTransaction(addressKeyIdentifier)
+                     .then(data => send_window_parent_post_message('last_transaction', data[0]));
+       })
+       .then(() => readStatHandlerID = setTimeout(() => readStat(), 1000))
+       .catch(() => readStatHandlerID = setTimeout(() => readStat(), 1000));
+}
+
+let check_latest_version_timeout_id = null;
+
+function check_latest_version() {
+    check_latest_version_timeout_id = true;
+    API.getLatestMillixVersion()
+       .then(response => {
+           send_window_parent_post_message('available_version', response);
+           check_latest_version_timeout_id = setTimeout(() => apiCheck(), 300);
+       })
+       .catch(() => check_latest_version_timeout_id = setTimeout(() => apiCheck(), 10));
 }
 
 let apiCheckHandlerID = null;
+
 function apiCheck() {
     apiCheckHandlerID = true;
     API.apiHealthCheck()
-        .then(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
-        .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500));
+       .then(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
+       .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500));
 }
 
-window.addEventListener('message', ({ data }) => {
-    console.log("[millix_ws]", data);
+window.addEventListener('message', ({data}) => {
     switch (data.type) {
         case 'api_config':
             API.setNodeID(data.node_id);
@@ -246,35 +347,35 @@ window.addEventListener('message', ({ data }) => {
             break;
         case 'get_session':
             API.getSession()
-                .then(data => {
-                    if (data.wallet) {
-                        addressKeyIdentifier = data.wallet.address_key_identifier;
-                    }
-                    window.parent.postMessage({ type: 'millix_session', data }, _API.PARENT_FRAME_ID)
-                }).catch(_ => setTimeout(() => window.postMessage({ type: 'get_session' }), 1000));
+               .then(data => {
+                   if (data.wallet) {
+                       addressKeyIdentifier = data.wallet.address_key_identifier;
+                   }
+                   send_window_parent_post_message('millix_session', data);
+               }).catch(_ => setTimeout(() => window.postMessage({type: 'get_session'}), 1000));
             break;
         case 'new_session':
             API.newSession(data.password)
-                .then(data => {
-                    if (data.wallet) {
-                        addressKeyIdentifier = data.wallet.address_key_identifier;
-                    }
-                    window.parent.postMessage({ type: 'millix_session', data }, _API.PARENT_FRAME_ID)
-                });
+               .then(data => {
+                   if (data.wallet) {
+                       addressKeyIdentifier = data.wallet.address_key_identifier;
+                   }
+                   send_window_parent_post_message('millix_session', data);
+               });
             break;
         case 'get_transaction':
             API.getTransaction(data.transaction_id, data.shard_id)
-                .then(data => {
-                    window.parent.postMessage({ type: 'new_transaction', data }, _API.PARENT_FRAME_ID)
-                });
+               .then(data => {
+                   send_window_parent_post_message('new_transaction', data);
+               });
             break;
         case 'get_last_transaction_timestamp':
             API.getLastTransactionTimestamp()
-                .then(data => window.parent.postMessage({ type: 'last_transaction_timestamp', data }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('last_transaction_timestamp', data));
             break;
         case 'get_total_advertisement_payment':
             API.getTotalAdvertismentPayment()
-                .then(data => window.parent.postMessage({ type: 'total_advertisment_payment', data }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('total_advertisement_payment', data));
             break;
         case 'read_stat_start':
             if (!readStatHandlerID) {
@@ -289,13 +390,16 @@ window.addEventListener('message', ({ data }) => {
             break;
         case 'get_next_tangled_advertisement':
             API.getNextAdvertisementToRender()
-                .then(data => window.parent.postMessage({ type: 'next_tangled_advertisement', data }, _API.PARENT_FRAME_ID))
-                .catch(() => window.parent.postMessage({ type: 'next_tangled_advertisement', data: null }, _API.PARENT_FRAME_ID));
+               .then(data => send_window_parent_post_message('next_tangled_advertisement', data))
+               .catch(() => send_window_parent_post_message('next_tangled_advertisement'));
             break;
         case 'api_check':
             if (!apiCheckHandlerID) {
                 setTimeout(() => apiCheck(), 15000); // start api check after 15s
             }
+            break;
+        case 'start_check_latest_version':
+            check_latest_version();
             break;
     }
 });

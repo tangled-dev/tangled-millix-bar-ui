@@ -1,60 +1,48 @@
-let CHILD_FRAME_ID = 'chrome-untrusted://millix-ws/'
+let CHILD_FRAME_ID = typeof (config.child_frame_id) !== 'undefined' ? config.child_frame_id : 'chrome-untrusted://millix-ws/';
 
-// UNCOMMENT ON DEV MODE ONLY
-/*
-CHILD_FRAME_ID = "*";
-const cr = {
-    define(n, f) {
-        globalThis[n] = f();
-    },
-    addWebUIListener() { }
-}
-
-const loadTimeData = {
-    getBoolean() { return false }
-}
-
-chrome.send = () => { }
-
-const NODE_ID = undefined;
-const NODE_SIGNATURE = undefined;
-if(!NODE_ID || !NODE_SIGNATURE){
-    throw Error("NODE_ID and NODE_SIGNATURE must be defined");
-}
-setTimeout(() => {
-    millix_bar.connectToWallet({ node_id: NODE_ID, node_signature: NODE_SIGNATURE })
-    millix_bar.activateWallet()
-    millix_bar.refreshThemeStyles({ is_dark_theme: true })
-}, 1000)
-*/
-// END DEV MODE BLOCK
-
-cr.define('millix_bar', function () {
+cr.define('millix_bar', function() {
     'use strict';
 
     let millixAPIFrame;
-    let lastKnownTransaction = undefined;
-    let reloadTimeout = undefined;
-    let fetchAdvertisementTimeout = undefined;
-    let transactionTimestampUpdateTimeout = undefined;
-    let totalAdvertisementPaymentTimeout = undefined;
-    const ADVERTISEMENT_ROTATION_TIME = 30000;
-    const ADVERTISEMENT_ROTATION_TIME_EMPTY = 5000;
-    let walletLocked = true;
-    let unlockFromBar = false;
-    const audioDeposit = new Audio('/deposit.mp3');
-    let stopAdvertisementRendering = false;
-    let advertisementRenderingTimestampStart = undefined;
+    let lastKnownTransaction                  = undefined;
+    let reloadTimeout                         = undefined;
+    let fetchAdvertisementTimeout             = undefined;
+    let transactionTimestampUpdateTimeout     = undefined;
+    let totalAdvertisementPaymentTimeout      = undefined;
+    const ADVERTISEMENT_ROTATION_TIME         = 30000;
+    const ADVERTISEMENT_ROTATION_TIME_EMPTY   = 5000;
+    let walletLocked                          = true;
+    let unlockFromBar                         = false;
+    const audioDeposit                        = new Audio('/deposit.mp3');
+    let stopAdvertisementRendering            = false;
+    let advertisementRenderingTimestampStart  = undefined;
     let advertisementRenderingTimestampPaused = undefined;
-    let advertisementPaymentTimestampLast = undefined;
-    let advertisementPaymentTotal = undefined;
-    let sessionStart = undefined;
-    let isDarkTheme = false;
+    let advertisementPaymentTimestampLast     = undefined;
+    let advertisementPaymentTotal             = undefined;
+    let sessionStart                          = undefined;
+    let isDarkTheme                           = false;
+
+    function initialize() {
+        refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
+
+        $('#wallet').click(() => showMillixWallet());
+        $('#wallet_unlock').click(() => showMillixWallet());
+        $('#wallet_network').click(() => chrome.send('showMillixWallet', ['peers']));
+        $('#wallet_log').click(() => chrome.send('showMillixWallet', ['event-log']));
+        $('#wallet_backlog').click(() => chrome.send('showMillixWallet', ['backlog']));
+        $('#wallet_transaction').click(() => chrome.send('showMillixWallet', ['transaction-list']));
+        $('#wallet_restart').click(() => {
+            doNodeRestart();
+        });
+
+        cr.addWebUIListener('onThemeChanged', refreshThemeStyles.bind(this));
+    }
 
     function refreshThemeStyles(data) {
         if (data.is_dark_theme) {
             document.body.classList.add('dark');
-        } else {
+        }
+        else {
             document.body.classList.remove('dark');
         }
 
@@ -62,30 +50,26 @@ cr.define('millix_bar', function () {
     }
 
     function onApiFrameReady() {
-        console.log("[onApiFrameReady]");
         millixAPIFrame = document.getElementById('frame_millix_api');
     }
 
+    function send_api_frame_content_window_post_message(type, data = null) {
+        return millixAPIFrame.contentWindow.postMessage({
+            type: type,
+            ...data
+        }, CHILD_FRAME_ID);
+    }
+
     function connectToWallet(apiConfig) {
-        console.log("[activateWallet]");
         if (!millixAPIFrame) {
             setTimeout(() => connectToWallet(apiConfig), 500);
             return;
         }
-        console.log("[activateWallet] sent");
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'api_config',
-            ...apiConfig
-        }, CHILD_FRAME_ID);
-
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'get_session'
-        }, CHILD_FRAME_ID);
-
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'api_check'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('api_config', apiConfig);
+        send_api_frame_content_window_post_message('get_session');
+        send_api_frame_content_window_post_message('api_check');
+        send_api_frame_content_window_post_message('start_check_latest_version');
     }
 
     function showMillixWallet() {
@@ -97,17 +81,17 @@ cr.define('millix_bar', function () {
     }
 
     function showNewAdvertisement(advertisement) {
-        const $headline = $('#advertisement_headline');
-        const $targetPhrase = $('#advertisement_deck');
+        const $headline     = $('.advertisement_headline');
+        const $targetPhrase = $('.advertisement_deck');
 
         if (walletLocked) {
             $headline.text('');
             $targetPhrase.text('');
-            $headline.prop("href", undefined);
-            $targetPhrase.prop("href", undefined);
+            $headline.prop('href', undefined);
+            $targetPhrase.prop('href', undefined);
 
-            $headline.prop("title", undefined);
-            $targetPhrase.prop("title", undefined);
+            $headline.prop('title', undefined);
+            $targetPhrase.prop('title', undefined);
 
             $headline.off('click');
             $targetPhrase.off('click');
@@ -116,35 +100,35 @@ cr.define('millix_bar', function () {
             return;
         }
 
-        !!advertisementPaymentTimestampLast && console.log("last ad payment", moment(new Date(advertisementPaymentTimestampLast)).fromNow())
         if (!advertisement || !advertisement.advertisement_url) {
-            const aMinuteAgo = Date.now() - 60000;
-            const twoMinutesAgo = Date.now() - 120000;
+            const aMinuteAgo       = Date.now() - 60000;
+            const twoMinutesAgo    = Date.now() - 120000;
             const thirtyMinutesAgo = Date.now() - 1800000;
-            const aDayAgo = Date.now() - 86400000;
+            const aDayAgo          = Date.now() - 86400000;
             if (thirtyMinutesAgo > sessionStart && (!!advertisementPaymentTimestampLast && aDayAgo > advertisementPaymentTimestampLast)) {
                 $headline.text('unable to find ads');
                 $targetPhrase.text('please click "help -> report issue" to resolve');
-            } else {
+            }
+            else {
                 $headline.text('searching for ads...');
 
                 if (aMinuteAgo > sessionStart && (!!advertisementPaymentTimestampLast && twoMinutesAgo > advertisementPaymentTimestampLast)) {
                     $targetPhrase.text(`your last ad payment was received ${moment(new Date(advertisementPaymentTimestampLast)).fromNow()}` + (advertisementPaymentTotal ? `, you have earned ${advertisementPaymentTotal.toLocaleString('en-US')} millix in the past 24 hours.` : ''));
-                } else {
+                }
+                else {
                     $targetPhrase.text(advertisementPaymentTotal ? `you have earned ${advertisementPaymentTotal.toLocaleString('en-US')} millix in the past 24 hours.` : '');
                 }
             }
 
-            $headline.css('font-weight', 'normal');
-            $headline.css('color', isDarkTheme ? 'rgba(115,115,115,0.8)' : 'lightgray');
-            $targetPhrase.css('font-weight', 'normal');
-            $targetPhrase.css('color', isDarkTheme ? 'rgba(115,115,115,0.8)' : 'lightgray');
 
-            $headline.prop("href", undefined);
-            $targetPhrase.prop("href", undefined);
+            $headline.addClass('placeholder');
+            $targetPhrase.addClass('placeholder');
 
-            $headline.prop("title", undefined);
-            $targetPhrase.prop("title", undefined);
+            $headline.prop('href', undefined);
+            $targetPhrase.prop('href', undefined);
+
+            $headline.prop('title', undefined);
+            $targetPhrase.prop('title', undefined);
 
             $headline.off('click');
             $targetPhrase.off('click');
@@ -156,36 +140,37 @@ cr.define('millix_bar', function () {
                 fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME_EMPTY);
             }
 
-        } else {
-            $headline.css('font-weight', '');
-            $headline.css('color', '');
-            $targetPhrase.css('font-weight', '');
-            $targetPhrase.css('color', '');
+        }
+        else {
+            $headline.removeClass('placeholder');
+            $targetPhrase.removeClass('placeholder');
 
-            if ($(".arrow-icon").hasClass('open')) { //ads container not visible
+            if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
                 return;
             }
 
             let domain;
             try {
                 domain = new URL(advertisement.advertisement_url).host;
-            } catch (e) {
-                console.warn("invalid advertisement url", e);
+            }
+            catch (e) {
+                console.warn('invalid advertisement url', e);
                 return;
             }
 
-            if (domain.startsWith("www.")) {
+            if (domain.startsWith('www.')) {
                 domain = domain.substring(4);
             }
 
             let hasHeadline = false;
-            let hasDeck = false;
+            let hasDeck     = false;
 
             advertisement.attributes.forEach(attribute => {
-                if (attribute.attribute_type === "advertisement_headline" && attribute.value != undefined) {
+                if (attribute.attribute_type === 'advertisement_headline' && attribute.value != undefined) {
                     hasHeadline = true;
                     $headline.text(attribute.value);
-                } else if (attribute.attribute_type === "advertisement_deck" && attribute.value != undefined) {
+                }
+                else if (attribute.attribute_type === 'advertisement_deck' && attribute.value != undefined) {
                     hasDeck = true;
                     $targetPhrase.text(`${attribute.value} - ${domain}`);
                 }
@@ -195,16 +180,22 @@ cr.define('millix_bar', function () {
                 return fetchAdvertisement(); // get a new ads
             }
 
-            $headline.prop("href", advertisement.advertisement_url);
-            $targetPhrase.prop("href", advertisement.advertisement_url);
+            $headline.prop('href', advertisement.advertisement_url);
+            $targetPhrase.prop('href', advertisement.advertisement_url);
 
-            $headline.prop("title", domain);
-            $targetPhrase.prop("title", domain);
+            $headline.prop('title', domain);
+            $targetPhrase.prop('title', domain);
 
             $headline.off('click');
             $targetPhrase.off('click');
-            $headline.on('click', () => chrome.send('showMillixWallet', ['new_tab', advertisement.advertisement_url]));
-            $targetPhrase.on('click', () => chrome.send('showMillixWallet', ['new_tab', advertisement.advertisement_url]));
+            $headline.on('click', () => chrome.send('showMillixWallet', [
+                'new_tab',
+                advertisement.advertisement_url
+            ]));
+            $targetPhrase.on('click', () => chrome.send('showMillixWallet', [
+                'new_tab',
+                advertisement.advertisement_url
+            ]));
 
             advertisementRenderingTimestampStart = Date.now();
         }
@@ -218,14 +209,12 @@ cr.define('millix_bar', function () {
     function fetchAdvertisement() {
         clearTimeout(fetchAdvertisementTimeout);
 
-        if ($(".arrow-icon").hasClass('open')) { //ads container not visible
+        if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
             fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME_EMPTY);
             return;
         }
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'get_next_tangled_advertisement'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('get_next_tangled_advertisement');
         fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME);
     }
 
@@ -233,9 +222,7 @@ cr.define('millix_bar', function () {
         clearTimeout(transactionTimestampUpdateTimeout);
 
         if (!scheduleOnly) {
-            millixAPIFrame.contentWindow.postMessage({
-                type: 'get_last_transaction_timestamp'
-            }, CHILD_FRAME_ID);
+            send_api_frame_content_window_post_message('get_last_transaction_timestamp');
         }
 
         transactionTimestampUpdateTimeout = setTimeout(() => updateLastTransactionTimestamp(), 10000);
@@ -245,31 +232,25 @@ cr.define('millix_bar', function () {
         clearTimeout(totalAdvertisementPaymentTimeout);
 
         if (!scheduleOnly) {
-            millixAPIFrame.contentWindow.postMessage({
-                type: 'get_total_advertisement_payment'
-            }, CHILD_FRAME_ID);
+            send_api_frame_content_window_post_message('get_total_advertisement_payment');
         }
 
         totalAdvertisementPaymentTimeout = setTimeout(() => updateTotalAdvertisementPayment(), 60000);
     }
 
-    function activateWallet() {
+    function unlockWallet() {
         if (!walletLocked) {
             return;
         }
 
-        sessionStart = Date.now();
+        sessionStart                      = Date.now();
         advertisementPaymentTimestampLast = Date.now();
-        advertisementPaymentTotal = null;
+        advertisementPaymentTotal         = null;
 
         updateLastTransactionTimestamp();
         updateTotalAdvertisementPayment();
 
-
-        $('#wallet_unlock').addClass('hidden');
-        $('#wallet_restart').addClass('hidden');
-        $('#wallet').removeClass('hidden');
-        $('#btn_expand').removeClass('hidden');
+        show_wallet_active_control();
 
         walletLocked = false;
         updateNodeStat(null);
@@ -278,38 +259,62 @@ cr.define('millix_bar', function () {
             refreshMillixWallet();
         }
 
-        console.log("[activateWallet]");
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'read_stat_start'
-        }, CHILD_FRAME_ID);
+        send_api_frame_content_window_post_message('read_stat_start');
         unlockFromBar = false;
 
         setTimeout(() => fetchAdvertisement(), 2000);
     }
 
-    function deactivateWallet() {
-        updateNodeStat(null);
-        walletLocked = true;
-        console.log("[deactivateWallet]");
-        $('#wallet').addClass('hidden');
-        $('#btn_expand').addClass('hidden');
+    function show_wallet_active_control() {
+        $('#wallet_unlock').addClass('hidden');
         $('#wallet_restart').addClass('hidden');
-        $('#wallet_unlock').removeClass('hidden');
+
+        $('#wallet').removeClass('hidden');
+        $('#btn_expand_status_area').removeClass('hidden');
+
+        set_advertisement_bar_container_status('success');
+    }
+
+    function set_advertisement_bar_container_status(status) {
+        $('#advertisement_container').removeClass('hidden');
+        $('#message_container').addClass('hidden');
+        $('.advertisement_bar_container').removeClass('status_warning status_danger');
+        if (status === 'danger') {
+            $('.advertisement_bar_container').addClass('status_danger');
+            $('#advertisement_container').addClass('hidden');
+            $('#message_container').removeClass('hidden');
+        }
+        else if (status === 'warning') {
+            $('.advertisement_bar_container').addClass('status_warning');
+            $('#advertisement_container').addClass('hidden');
+            $('#message_container').removeClass('hidden');
+        }
+    }
+
+    function deactivateWallet() {
+        walletLocked = true;
+        updateNodeStat(null);
+        show_wallet_pending_control();
         expandView(false);
 
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'read_stat_stop'
-        }, CHILD_FRAME_ID);
-
+        send_api_frame_content_window_post_message('read_stat_stop');
         disableAdvertisementFetch();
+    }
+
+    function show_wallet_pending_control() {
+        $('#wallet').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
+        $('#wallet_restart').addClass('hidden');
+
+        $('#wallet_unlock').removeClass('hidden');
+        set_advertisement_bar_container_status('warning');
     }
 
     function doNodeRestart() {
         clearTimeout(reloadTimeout);
         $('#btn-restart-label').text('restarting');
-        $('#btn-restart-icon').removeClass('hidden');
-        $('#btn-restart-icon-power').addClass('hidden');
-        $('#btn-restart-icon-spinner').removeClass('hidden');
+        $('.wallet_restart_icon_power').addClass('hidden');
+        $('.wallet_restart_icon_loader').removeClass('hidden');
         $('#wallet_restart > .btn').addClass('btn-disabled');
         chrome.send('restartMillixNode');
     }
@@ -318,31 +323,36 @@ cr.define('millix_bar', function () {
         refreshMillixWallet();
         updateNodeStat(null);
         walletLocked = true;
-        console.log("[restartWallet]");
-        $('#wallet').addClass('hidden');
-        $('#btn_expand').addClass('hidden');
-        $('#wallet_unlock').addClass('hidden');
-        let counter = 10;
 
+        show_restart_button();
+
+        let counter                = 10;
         const updateRestartTimeout = () => {
             $('#btn-restart-label').text(`restart node (${counter}s)`);
             counter--;
             if (counter == 0) {
                 doNodeRestart();
-            } else {
+            }
+            else {
                 reloadTimeout = setTimeout(() => {
                     updateRestartTimeout();
                 }, 1000);
             }
-        }
+        };
         updateRestartTimeout();
+    }
 
-        $('#btn-restart-icon').removeClass('hidden');
-        $('#btn-restart-icon-power').removeClass('hidden');
-        $('#btn-restart-icon-spinner').addClass('hidden');
+    function show_restart_button() {
+        $('#wallet').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
+        $('#wallet_unlock').addClass('hidden');
+
+        $('.wallet_restart_icon_power').removeClass('hidden');
+        $('.wallet_restart_icon_loader').addClass('hidden');
         $('#wallet_restart > .btn').removeClass('btn-disabled');
         $('#wallet_restart').removeClass('hidden');
         expandView(false);
+        set_advertisement_bar_container_status('danger');
     }
 
     function updateNodeStat(nodeStat) {
@@ -358,7 +368,8 @@ cr.define('millix_bar', function () {
             $('#backlog_count').text('');
             $('#transaction_count').text('');
             lastKnownTransaction = undefined;
-        } else {
+        }
+        else {
             $('#balance_stable').text(nodeStat.balance.stable.toLocaleString());
             $('#balance_pending').text(nodeStat.balance.unstable.toLocaleString());
 
@@ -370,39 +381,21 @@ cr.define('millix_bar', function () {
     }
 
     function onMillixBarMessage(data) {
-        console.log("[onMillixBarMessage] ", data);
+        console.log('[onMillixBarMessage] ', data);
         if (data.type === 'wallet_update_state') {
             if (data.action.type === 'UNLOCK_WALLET') {
-                activateWallet();
-            } else if (data.action.type === 'LOCK_WALLET') {
+                unlockWallet();
+            }
+            else if (data.action.type === 'LOCK_WALLET') {
                 deactivateWallet();
-            } else if (data.action.type === 'UPDATE_NOTIFICATION_VOLUME') {
+            }
+            else if (data.action.type === 'UPDATE_NOTIFICATION_VOLUME') {
                 changeVolume(data.action.payload);
             }
-        } else if (data.type === 'api_config_update') {
+        }
+        else if (data.type === 'api_config_update') {
             connectToWallet(data.config);
         }
-    }
-
-    /**
-     * 
-     */
-    function initialize() {
-        console.log("[initialize]");
-
-        refreshThemeStyles({ is_dark_theme: loadTimeData.getBoolean('is_dark_theme') });
-
-        $('#wallet').click(() => showMillixWallet());
-        $('#wallet_unlock').click(() => showMillixWallet());
-        $('#wallet_network').click(() => chrome.send('showMillixWallet', ['peers']));
-        $('#wallet_log').click(() => chrome.send('showMillixWallet', ['event-log']));
-        $('#wallet_backlog').click(() => chrome.send('showMillixWallet', ['backlog']));
-        $('#wallet_transaction').click(() => chrome.send('showMillixWallet', ['transaction-list']));
-        $('#wallet_restart').click(() => {
-            doNodeRestart();
-        });
-
-        cr.addWebUIListener("onThemeChanged", refreshThemeStyles.bind(this));
     }
 
     function onLastTransactionUpdate(lastTransaction) {
@@ -413,23 +406,24 @@ cr.define('millix_bar', function () {
         if (!lastKnownTransaction) {
             lastKnownTransaction = lastTransaction;
             return;
-        } else if (lastKnownTransaction.transaction_id === lastTransaction.transaction_id) {
+        }
+        else if (lastKnownTransaction.transaction_id === lastTransaction.transaction_id) {
             return;
         }
 
         // check if we should notify user
         lastKnownTransaction = lastTransaction;
-        millixAPIFrame.contentWindow.postMessage({
-            type: 'get_transaction',
+        send_api_frame_content_window_post_message('get_transaction', {
             transaction_id: lastKnownTransaction.transaction_id,
-            shard_id: lastKnownTransaction.shard_id,
-        }, CHILD_FRAME_ID);
+            shard_id      : lastKnownTransaction.shard_id
+        });
     }
 
     function onLastTransactionTimestampUpdate(data) {
         if (!data.timestamp) {
             advertisementPaymentTimestampLast = undefined;
-        } else {
+        }
+        else {
             advertisementPaymentTimestampLast = data.timestamp * 1000;
         }
         updateLastTransactionTimestamp(true);
@@ -444,12 +438,12 @@ cr.define('millix_bar', function () {
         let volume;
         if (data) {
             volume = data.volume / 100.;
-        } else {
+        }
+        else {
             volume = 1.0;
         }
         audioDeposit.volume = volume;
     }
-
 
     function onTransaction(transaction) {
         if (walletLocked) {
@@ -461,48 +455,48 @@ cr.define('millix_bar', function () {
     }
 
     function expandView(expanded) {
-        const $arrow = $(".arrow-icon");
-        const $adsHolder = $('#ads_holder');
-        const $walletHolder = $('#wallet_holder');
-        const $expandableViews = $(".expandable-view");
-
         if (expanded) {
-            $arrow.addClass("open");
-            $adsHolder.hide();
-            $walletHolder.css("width", "");
-            $walletHolder[0].classList.replace("col-4", "col-12");
-            $("body").css("min-width", "");
-            $expandableViews.removeClass("hidden");
-        } else {
-            $arrow.removeClass("open");
-            $expandableViews.addClass("hidden");
-            $walletHolder[0].classList.replace("col-12", "col-4");
-            $walletHolder.css("width", "255px");
-            $("body").css("min-width", "700px");
-            $adsHolder.show();
+            $('#btn_expand_status_area').addClass('open');
+            $('.expandable_view').removeClass('hidden');
+            $('#advertisement_container').hide();
+        }
+        else {
+            $('#btn_expand_status_area').removeClass('open');
+            $('.expandable_view').addClass('hidden');
+            $('#advertisement_container').show();
         }
     }
 
     function onVisibilityChange() {
         if (document.hidden) {
-            stopAdvertisementRendering = true;
+            stopAdvertisementRendering            = true;
             advertisementRenderingTimestampPaused = Date.now();
             clearInterval(fetchAdvertisementTimeout);
-            console.log("pausing advertisement rendering")
-        } else {
+            console.log('pausing advertisement rendering');
+        }
+        else {
             stopAdvertisementRendering = false;
-            console.log("resuming advertisement rendering")
+            console.log('resuming advertisement rendering');
             if (advertisementRenderingTimestampStart) {
                 const remainingAdvertisementRendingTime = ADVERTISEMENT_ROTATION_TIME - (advertisementRenderingTimestampPaused - advertisementRenderingTimestampStart);
                 if (remainingAdvertisementRendingTime > 0) {
-                    console.log(Math.floor(remainingAdvertisementRendingTime / 1000) + " seconds remaining");
+                    console.log(Math.floor(remainingAdvertisementRendingTime / 1000) + ' seconds remaining');
                     fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), remainingAdvertisementRendingTime);
                     return;
                 }
             }
-            console.log("prepare to get a new ad");
+            console.log('prepare to get a new ad');
             fetchAdvertisement();
         }
+    }
+
+    function updateVersion(version) {
+        if (!version) {
+            return;
+        }
+
+        $('.update_version_link').removeClass('hidden');
+        $('.latest_available_version').html(version.version_available);
     }
 
     // Return an object with all of the exports.
@@ -511,7 +505,7 @@ cr.define('millix_bar', function () {
         connectToWallet,
         deactivateWallet,
         restartWallet,
-        activateWallet,
+        unlockWallet,
         onMillixBarMessage,
         updateNodeStat,
         onApiFrameReady,
@@ -522,12 +516,12 @@ cr.define('millix_bar', function () {
         expandView,
         onTransaction,
         showNewAdvertisement,
-        onVisibilityChange
+        onVisibilityChange,
+        updateVersion
     };
 });
 
-window.addEventListener('message', ({ data }) => {
-    console.log("[millix_bar]", data);
+window.addEventListener('message', ({data}) => {
     switch (data.type) {
         case 'last_transaction':
             millix_bar.onLastTransactionUpdate(data.data);
@@ -535,7 +529,7 @@ window.addEventListener('message', ({ data }) => {
         case 'last_transaction_timestamp':
             millix_bar.onLastTransactionTimestampUpdate(data.data);
             break;
-        case 'total_advertisment_payment':
+        case 'total_advertisement_payment':
             millix_bar.onTotalAdvertisementPaymentUpdate(data.data);
             break;
         case 'new_transaction':
@@ -543,11 +537,24 @@ window.addEventListener('message', ({ data }) => {
             break;
         case 'millix_session':
             if (data.data.api_status === 'fail') {
-                chrome.send('updateMillixWallet', [{ type: 'wallet_update_state', from_bar: true, action: { type: 'LOCK_WALLET' } }]);
+                chrome.send('updateMillixWallet', [
+                    {
+                        type    : 'wallet_update_state',
+                        from_bar: true,
+                        action  : {type: 'LOCK_WALLET'}
+                    }
+                ]);
                 millix_bar.deactivateWallet();
-            } else {
-                chrome.send('updateMillixWallet', [{ type: 'wallet_update_state', from_bar: true, action: { type: 'UNLOCK_WALLET' } }]);
-                millix_bar.activateWallet(data.data.wallet);
+            }
+            else {
+                chrome.send('updateMillixWallet', [
+                    {
+                        type    : 'wallet_update_state',
+                        from_bar: true,
+                        action  : {type: 'UNLOCK_WALLET'}
+                    }
+                ]);
+                millix_bar.unlockWallet(data.data.wallet);
             }
             break;
         case 'node_stat':
@@ -564,8 +571,11 @@ window.addEventListener('message', ({ data }) => {
             break;
         case 'next_tangled_advertisement':
             const advertisement = data.data;
-            console.log('[advertisement] new advertisement found', advertisement);
             millix_bar.showNewAdvertisement(advertisement);
+            break;
+        case 'available_version':
+            const version = data.data;
+            millix_bar.updateVersion(version);
             break;
     }
 
@@ -573,14 +583,15 @@ window.addEventListener('message', ({ data }) => {
 
 document.addEventListener('DOMContentLoaded', millix_bar.initialize);
 
-document.addEventListener("visibilitychange", millix_bar.onVisibilityChange);
+document.addEventListener('visibilitychange', millix_bar.onVisibilityChange);
 
 $(document).ready(() => {
-    $(".arrow-icon").click(function () {
+    $('#btn_expand_status_area').click(function() {
         const $this = $(this);
-        if ($this.hasClass("open")) {
+        if ($this.hasClass('open')) {
             millix_bar.expandView(false);
-        } else {
+        }
+        else {
             millix_bar.expandView(true);
         }
     });
