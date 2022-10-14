@@ -66,11 +66,11 @@ a:hover {
 }
 
 .status_warning .message_container .title {
-    color: #ffc107;
+    color: #f7af3e;
 }
 
 .status_danger .message_container .title {
-    color: #cb1627;
+    color: #db524b;
 }
 
 .message_container .note {
@@ -178,6 +178,10 @@ svg {
 
 .text_muted {
     color: #a0a0a0;
+}
+
+.wallet_restart_icon_loader {
+    fill: #a0a0a0;
 }
 
 .wallet_control_container {

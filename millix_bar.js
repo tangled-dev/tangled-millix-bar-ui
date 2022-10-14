@@ -209,7 +209,7 @@ cr.define('millix_bar', function() {
     function fetchAdvertisement() {
         clearTimeout(fetchAdvertisementTimeout);
 
-        if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
+        if ($('#advertisement_container').hasClass('hidden')) { //ads container not visible
             fetchAdvertisementTimeout = setTimeout(() => fetchAdvertisement(), ADVERTISEMENT_ROTATION_TIME_EMPTY);
             return;
         }
@@ -295,7 +295,6 @@ cr.define('millix_bar', function() {
         walletLocked = true;
         updateNodeStat(null);
         show_wallet_pending_control();
-        expandView(false);
 
         send_api_frame_content_window_post_message('read_stat_stop');
         disableAdvertisementFetch();
@@ -351,7 +350,6 @@ cr.define('millix_bar', function() {
         $('.wallet_restart_icon_loader').addClass('hidden');
         $('#wallet_restart > .btn').removeClass('btn-disabled');
         $('#wallet_restart').removeClass('hidden');
-        expandView(false);
         set_advertisement_bar_container_status('danger');
     }
 
@@ -458,12 +456,12 @@ cr.define('millix_bar', function() {
         if (expanded) {
             $('#btn_expand_status_area').addClass('open');
             $('.expandable_view').removeClass('hidden');
-            $('#advertisement_container').hide();
+            $('#advertisement_container').addClass('hidden');
         }
         else {
             $('#btn_expand_status_area').removeClass('open');
             $('.expandable_view').addClass('hidden');
-            $('#advertisement_container').show();
+            $('#advertisement_container').removeClass('hidden');
         }
     }
 
@@ -496,7 +494,6 @@ cr.define('millix_bar', function() {
         }
 
         $('.update_version_link').removeClass('hidden');
-        $('.latest_available_version').html(version.version_available);
     }
 
     // Return an object with all of the exports.
