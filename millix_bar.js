@@ -493,7 +493,11 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        $('.update_version_link').removeClass('hidden');
+        const update_version_link = $('.update_version_link');
+        update_version_link.removeClass('hidden');
+
+        const href_current = update_version_link.attr('href');
+        update_version_link.attr('href', href_current + '?os_platform=' + version.os_platform);
     }
 
     // Return an object with all of the exports.
