@@ -22,6 +22,22 @@ cr.define('millix_bar', function() {
     let sessionStart                          = undefined;
     let isDarkTheme                           = false;
 
+    function initialize() {
+        refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
+
+        $('#wallet').click(() => showMillixWallet());
+        $('#wallet_unlock').click(() => showMillixWallet());
+        $('#wallet_network').click(() => chrome.send('showMillixWallet', ['peers']));
+        $('#wallet_log').click(() => chrome.send('showMillixWallet', ['event-log']));
+        $('#wallet_backlog').click(() => chrome.send('showMillixWallet', ['backlog']));
+        $('#wallet_transaction').click(() => chrome.send('showMillixWallet', ['transaction-list']));
+        $('#wallet_restart').click(() => {
+            doNodeRestart();
+        });
+
+        cr.addWebUIListener('onThemeChanged', refreshThemeStyles.bind(this));
+    }
+
     function refreshThemeStyles(data) {
         if (data.is_dark_theme) {
             document.body.classList.add('dark');
@@ -104,10 +120,9 @@ cr.define('millix_bar', function() {
                 }
             }
 
-            $headline.css('font-weight', 'normal');
-            $headline.css('color', isDarkTheme ? 'rgba(115,115,115,0.8)' : 'lightgray');
-            $targetPhrase.css('font-weight', 'normal');
-            $targetPhrase.css('color', isDarkTheme ? 'rgba(115,115,115,0.8)' : 'lightgray');
+
+            $headline.addClass('placeholder');
+            $targetPhrase.addClass('placeholder');
 
             $headline.prop('href', undefined);
             $targetPhrase.prop('href', undefined);
@@ -127,10 +142,8 @@ cr.define('millix_bar', function() {
 
         }
         else {
-            $headline.css('font-weight', '');
-            $headline.css('color', '');
-            $targetPhrase.css('font-weight', '');
-            $targetPhrase.css('color', '');
+            $headline.removeClass('placeholder');
+            $targetPhrase.removeClass('placeholder');
 
             if ($('#btn_expand_status_area').hasClass('open')) { //ads container not visible
                 return;
@@ -225,7 +238,7 @@ cr.define('millix_bar', function() {
         totalAdvertisementPaymentTimeout = setTimeout(() => updateTotalAdvertisementPayment(), 60000);
     }
 
-    function activateWallet() {
+    function unlockWallet() {
         if (!walletLocked) {
             return;
         }
@@ -237,10 +250,7 @@ cr.define('millix_bar', function() {
         updateLastTransactionTimestamp();
         updateTotalAdvertisementPayment();
 
-        $('#wallet_unlock').addClass('hidden');
-        $('#wallet_restart').addClass('hidden');
-        $('#wallet').removeClass('hidden');
-        $('#btn_expand_status_area').removeClass('hidden');
+        show_wallet_active_control();
 
         walletLocked = false;
         updateNodeStat(null);
@@ -255,25 +265,56 @@ cr.define('millix_bar', function() {
         setTimeout(() => fetchAdvertisement(), 2000);
     }
 
-    function deactivateWallet() {
-        updateNodeStat(null);
-        walletLocked = true;
-        $('#wallet').addClass('hidden');
-        $('#btn_expand_status_area').addClass('hidden');
+    function show_wallet_active_control() {
+        $('#wallet_unlock').addClass('hidden');
         $('#wallet_restart').addClass('hidden');
-        $('#wallet_unlock').removeClass('hidden');
+
+        $('#wallet').removeClass('hidden');
+        $('#btn_expand_status_area').removeClass('hidden');
+
+        set_advertisement_bar_container_status('success');
+    }
+
+    function set_advertisement_bar_container_status(status) {
+        $('#advertisement_container').removeClass('hidden');
+        $('#message_container').addClass('hidden');
+        $('.advertisement_bar_container').removeClass('status_warning status_danger');
+        if (status === 'danger') {
+            $('.advertisement_bar_container').addClass('status_danger');
+            $('#advertisement_container').addClass('hidden');
+            $('#message_container').removeClass('hidden');
+        }
+        else if (status === 'warning') {
+            $('.advertisement_bar_container').addClass('status_warning');
+            $('#advertisement_container').addClass('hidden');
+            $('#message_container').removeClass('hidden');
+        }
+    }
+
+    function deactivateWallet() {
+        walletLocked = true;
+        updateNodeStat(null);
+        show_wallet_pending_control();
         expandView(false);
 
         send_api_frame_content_window_post_message('read_stat_stop');
         disableAdvertisementFetch();
     }
 
+    function show_wallet_pending_control() {
+        $('#wallet').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
+        $('#wallet_restart').addClass('hidden');
+
+        $('#wallet_unlock').removeClass('hidden');
+        set_advertisement_bar_container_status('warning');
+    }
+
     function doNodeRestart() {
         clearTimeout(reloadTimeout);
         $('#btn-restart-label').text('restarting');
-        $('#btn-restart-icon').removeClass('hidden');
-        $('#btn-restart-icon-power').addClass('hidden');
-        $('#btn-restart-icon-spinner').removeClass('hidden');
+        $('.wallet_restart_icon_power').addClass('hidden');
+        $('.wallet_restart_icon_loader').removeClass('hidden');
         $('#wallet_restart > .btn').addClass('btn-disabled');
         chrome.send('restartMillixNode');
     }
@@ -282,11 +323,10 @@ cr.define('millix_bar', function() {
         refreshMillixWallet();
         updateNodeStat(null);
         walletLocked = true;
-        $('#wallet').addClass('hidden');
-        $('#btn_expand_status_area').addClass('hidden');
-        $('#wallet_unlock').addClass('hidden');
-        let counter = 10;
 
+        show_restart_button();
+
+        let counter                = 10;
         const updateRestartTimeout = () => {
             $('#btn-restart-label').text(`restart node (${counter}s)`);
             counter--;
@@ -300,13 +340,19 @@ cr.define('millix_bar', function() {
             }
         };
         updateRestartTimeout();
+    }
 
-        $('#btn-restart-icon').removeClass('hidden');
-        $('#btn-restart-icon-power').removeClass('hidden');
-        $('#btn-restart-icon-spinner').addClass('hidden');
+    function show_restart_button() {
+        $('#wallet').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
+        $('#wallet_unlock').addClass('hidden');
+
+        $('.wallet_restart_icon_power').removeClass('hidden');
+        $('.wallet_restart_icon_loader').addClass('hidden');
         $('#wallet_restart > .btn').removeClass('btn-disabled');
         $('#wallet_restart').removeClass('hidden');
         expandView(false);
+        set_advertisement_bar_container_status('danger');
     }
 
     function updateNodeStat(nodeStat) {
@@ -338,7 +384,7 @@ cr.define('millix_bar', function() {
         console.log('[onMillixBarMessage] ', data);
         if (data.type === 'wallet_update_state') {
             if (data.action.type === 'UNLOCK_WALLET') {
-                activateWallet();
+                unlockWallet();
             }
             else if (data.action.type === 'LOCK_WALLET') {
                 deactivateWallet();
@@ -350,27 +396,6 @@ cr.define('millix_bar', function() {
         else if (data.type === 'api_config_update') {
             connectToWallet(data.config);
         }
-    }
-
-    /**
-     *
-     */
-    function initialize() {
-        console.log('[initialize]');
-
-        refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
-
-        $('#wallet').click(() => showMillixWallet());
-        $('#wallet_unlock').click(() => showMillixWallet());
-        $('#wallet_network').click(() => chrome.send('showMillixWallet', ['peers']));
-        $('#wallet_log').click(() => chrome.send('showMillixWallet', ['event-log']));
-        $('#wallet_backlog').click(() => chrome.send('showMillixWallet', ['backlog']));
-        $('#wallet_transaction').click(() => chrome.send('showMillixWallet', ['transaction-list']));
-        $('#wallet_restart').click(() => {
-            doNodeRestart();
-        });
-
-        cr.addWebUIListener('onThemeChanged', refreshThemeStyles.bind(this));
     }
 
     function onLastTransactionUpdate(lastTransaction) {
@@ -430,22 +455,15 @@ cr.define('millix_bar', function() {
     }
 
     function expandView(expanded) {
-        const btn_expand_status_area = $('#btn_expand_status_area');
-        const $adsHolder             = $('#advertisement_container');
-        const balance                = $('#status_container');
-        const $expandableViews       = $('.expandable-view');
-
         if (expanded) {
-            btn_expand_status_area.addClass('open');
-            $adsHolder.hide();
-            $('body').css('min-width', '');
-            $expandableViews.removeClass('hidden');
+            $('#btn_expand_status_area').addClass('open');
+            $('.expandable_view').removeClass('hidden');
+            $('#advertisement_container').hide();
         }
         else {
-            btn_expand_status_area.removeClass('open');
-            $expandableViews.addClass('hidden');
-            $('body').css('min-width', '700px');
-            $adsHolder.show();
+            $('#btn_expand_status_area').removeClass('open');
+            $('.expandable_view').addClass('hidden');
+            $('#advertisement_container').show();
         }
     }
 
@@ -487,7 +505,7 @@ cr.define('millix_bar', function() {
         connectToWallet,
         deactivateWallet,
         restartWallet,
-        activateWallet,
+        unlockWallet,
         onMillixBarMessage,
         updateNodeStat,
         onApiFrameReady,
@@ -536,7 +554,7 @@ window.addEventListener('message', ({data}) => {
                         action  : {type: 'UNLOCK_WALLET'}
                     }
                 ]);
-                millix_bar.activateWallet(data.data.wallet);
+                millix_bar.unlockWallet(data.data.wallet);
             }
             break;
         case 'node_stat':

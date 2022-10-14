@@ -31,7 +31,7 @@ setTimeout(() => {
             node_id       : NODE_ID,
             node_signature: NODE_SIGNATURE
         });
-        millix_bar.activateWallet();
+        millix_bar.unlockWallet();
         millix_bar.refreshThemeStyles({is_dark_theme: true});
     }
 }, 1000);
