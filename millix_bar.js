@@ -40,10 +40,10 @@ cr.define('millix_bar', function() {
 
     function refreshThemeStyles(data) {
         if (data.is_dark_theme) {
-            document.body.classList.add('dark');
+            document.body.classList.add('theme_dark');
         }
         else {
-            document.body.classList.remove('dark');
+            document.body.classList.remove('theme_dark');
         }
 
         isDarkTheme = data.is_dark_theme;
@@ -119,7 +119,6 @@ cr.define('millix_bar', function() {
                     $targetPhrase.text(advertisementPaymentTotal ? `you have earned ${advertisementPaymentTotal.toLocaleString('en-US')} millix in the past 24 hours.` : '');
                 }
             }
-
 
             $headline.addClass('placeholder');
             $targetPhrase.addClass('placeholder');
@@ -280,11 +279,14 @@ cr.define('millix_bar', function() {
         $('#message_container').addClass('hidden');
         $('.advertisement_bar_container').removeClass('status_warning status_danger');
         if (status === 'danger') {
+            toggle_status_area(false);
+
             $('.advertisement_bar_container').addClass('status_danger');
             $('#advertisement_container').addClass('hidden');
             $('#message_container').removeClass('hidden');
         }
         else if (status === 'warning') {
+            toggle_status_area(false);
             $('.advertisement_bar_container').addClass('status_warning');
             $('#advertisement_container').addClass('hidden');
             $('#message_container').removeClass('hidden');
@@ -310,12 +312,14 @@ cr.define('millix_bar', function() {
     }
 
     function doNodeRestart() {
-        clearTimeout(reloadTimeout);
-        $('#btn-restart-label').text('restarting');
-        $('.wallet_restart_icon_power').addClass('hidden');
-        $('.wallet_restart_icon_loader').removeClass('hidden');
-        $('#wallet_restart > .btn').addClass('btn-disabled');
-        chrome.send('restartMillixNode');
+        if (!$('#wallet_restart').hasClass('btn-disabled')) {
+            clearTimeout(reloadTimeout);
+            $('.wallet_restart_icon_power').addClass('hidden');
+            $('.wallet_restart_icon_loader').removeClass('hidden');
+            $('#wallet_restart').addClass('btn-disabled');
+            $('#wallet_restart .label').text('restarting');
+            chrome.send('restartMillixNode');
+        }
     }
 
     function restartWallet() {
@@ -327,7 +331,7 @@ cr.define('millix_bar', function() {
 
         let counter                = 10;
         const updateRestartTimeout = () => {
-            $('#btn-restart-label').text(`restart node (${counter}s)`);
+            $('#wallet_restart .label').text(`restart node (${counter}s)`);
             counter--;
             if (counter == 0) {
                 doNodeRestart();
@@ -348,8 +352,7 @@ cr.define('millix_bar', function() {
 
         $('.wallet_restart_icon_power').removeClass('hidden');
         $('.wallet_restart_icon_loader').addClass('hidden');
-        $('#wallet_restart > .btn').removeClass('btn-disabled');
-        $('#wallet_restart').removeClass('hidden');
+        $('#wallet_restart').removeClass('btn-disabled').removeClass('hidden');
         set_advertisement_bar_container_status('danger');
     }
 
@@ -452,8 +455,8 @@ cr.define('millix_bar', function() {
         audioDeposit.play();
     }
 
-    function expandView(expanded) {
-        if (expanded) {
+    function toggle_status_area(show) {
+        if (show) {
             $('#btn_expand_status_area').addClass('open');
             $('.expandable_view').removeClass('hidden');
             $('#advertisement_container').addClass('hidden');
@@ -514,7 +517,7 @@ cr.define('millix_bar', function() {
         onLastTransactionTimestampUpdate,
         onTotalAdvertisementPaymentUpdate,
         refreshThemeStyles,
-        expandView,
+        toggle_status_area,
         onTransaction,
         showNewAdvertisement,
         onVisibilityChange,
@@ -590,10 +593,10 @@ $(document).ready(() => {
     $('#btn_expand_status_area').click(function() {
         const $this = $(this);
         if ($this.hasClass('open')) {
-            millix_bar.expandView(false);
+            millix_bar.toggle_status_area(false);
         }
         else {
-            millix_bar.expandView(true);
+            millix_bar.toggle_status_area(true);
         }
     });
 });

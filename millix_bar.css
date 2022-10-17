@@ -13,7 +13,8 @@ a {
     text-decoration: none;
 }
 
-a:hover {
+.theme_dark a {
+    color: #dadada;
 }
 
 .badge {
@@ -40,6 +41,7 @@ a:hover {
     width: 100%;
 }
 
+.theme_dark .advertisement_bar_container,
 .advertisement_bar_container.status_warning,
 .advertisement_bar_container.status_danger {
     background-color: #171827;
@@ -140,6 +142,10 @@ a:hover {
     padding: 0 1rem;
 }
 
+input:focus {
+    outline: none;
+}
+
 svg {
     height: 1rem;
     width: 1rem;
@@ -216,7 +222,6 @@ svg {
     border-color: #9400ce;
 }
 
-
 .btn-outline-primary {
     color: #a9a9a9;
     border-color: #9400ce;
@@ -226,6 +231,15 @@ svg {
 .btn-outline-primary:focus {
     color: #fff;
     background-color: #9400ce;
+}
+
+.btn-disabled,
+.btn-disabled:hover,
+.btn-disabled:focus,
+.btn-disabled:active {
+    background-color: rgba(205, 207, 214, 0.1);
+    border-color: rgba(205, 207, 214, 0.1);
+    color: #a9a9a9;
 }
 
 .btn-xs {
@@ -260,111 +274,17 @@ svg {
     flex-direction: column;
 }
 
+.theme_dark .advertisement_bar_item .text {
+    color: #dadada;
+}
+
 .advertisement_bar_item:hover {
-    cursor: pointer;
     background-color: rgba(210, 210, 210, 0.1);
-    border-color: #eee;
-    color: #333;
+    cursor: pointer;
 }
 
 /* -------------------------------------------------------- reviewed above ---------------------------------------------------------------------- */
 
-
-.noselect {
-    -webkit-touch-callout: none;
-    /* iOS Safari */
-    -webkit-user-select: none;
-    /* Safari */
-    -khtml-user-select: none;
-    /* Konqueror HTML */
-    -moz-user-select: none;
-    /* Firefox */
-    -ms-user-select: none;
-    /* Internet Explorer/Edge */
-    user-select: none;
-    /* Non-prefixed version, currently
-                                supported by Chrome and Opera */
-}
-
-.btn:focus, .btn:active:focus {
-    outline: thin dotted;
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: -2px;
-}
-
-.btn:active {
-    background-image: none;
-    outline: 0;
-    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .07);
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .07);
-}
-
-/* default
----------------------------- */
-
-
-.btn-default:hover {
-    color: #333;
-    background-color: rgba(210, 210, 210, 0.1);
-    border-color: #eee;
-}
-
-.dark .btn-default:hover {
-    background-color: transparent;
-    border-color: #555;
-}
-
-.btn-default:active {
-    color: #333;
-    background-color: rgb(230 230 230 / 10%);
-}
-
-.dark .btn-default:active {
-    background-color: transparent;
-    border-color: #666;
-}
-
-.btn-unlock-text {
-    font-size: 14px;
-    line-height: 27px;
-    color: #656565;
-}
-
-.dark .btn-unlock-text {
-    color: #d5d5d5;
-}
-
-.btn-disabled:hover, .btn-disabled:focus, .btn-disabled:active {
-    background-color: transparent;
-    border-color: transparent;
-    -webkit-box-shadow: none;
-    box-shadow: none;
-    outline: none;
-    outline-offset: 0;
-    cursor: default;
-}
-
-/**
-dark mode
-*/
-
-.dark .container {
-    color: rgba(241, 243, 244, 1);
-    background-color: #323639;
-}
-
-.dark .btn {
-    color: rgba(241, 243, 244, 1);
-    background-color: transparent;
-}
-
-.dark a {
-    color: rgba(241, 243, 244, 1);
-}
-
-input:focus {
-    outline: none;
-}
 
 .loader {
     margin-top: 5px;
@@ -378,18 +298,6 @@ input:focus {
     animation: spin 1s linear infinite;
 }
 
-
-.dark .btn-unlock, .btn-unlock {
-    line-height: 30px;
-    color: #b5b5b5;
-    font-size: 13px;
-    margin-left: 0px !important;
-    width: 111px;
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-top: 8px;
-    max-height: 26px;
-}
 
 /* Safari */
 

@@ -325,9 +325,9 @@ function check_latest_version() {
     API.getLatestMillixVersion()
        .then(response => {
            send_window_parent_post_message('available_version', response);
-           check_latest_version_timeout_id = setTimeout(() => apiCheck(), 300);
+           check_latest_version_timeout_id = setTimeout(() => check_latest_version(), 30000);
        })
-       .catch(() => check_latest_version_timeout_id = setTimeout(() => apiCheck(), 10));
+       .catch(() => check_latest_version_timeout_id = setTimeout(() => check_latest_version(), 10000));
 }
 
 let apiCheckHandlerID = null;
