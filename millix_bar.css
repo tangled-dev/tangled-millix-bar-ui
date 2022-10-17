@@ -35,13 +35,18 @@ a {
 /* -------------------------------------------------------- reviewed above ---------------------------------------------------------------------- */
 
 .advertisement_bar_container {
+    background-color: #f7f7f7;
     display: flex;
     overflow: hidden;
     height: 3.57rem;
     width: 100%;
 }
 
-.theme_dark .advertisement_bar_container,
+.theme_dark .advertisement_bar_container {
+    background-color: #35363a;
+    color: #a9a9a9;
+}
+
 .advertisement_bar_container.status_warning,
 .advertisement_bar_container.status_danger {
     background-color: #171827;
@@ -51,7 +56,7 @@ a {
 .advertisement_bar_container.status_warning .status_area_right,
 .advertisement_bar_container.status_danger .status_area_right {
     margin-left: 0;
-    justify-content: end;
+    justify-content: flex-end;
     flex: 0 0 18rem;
 }
 

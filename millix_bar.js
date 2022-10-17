@@ -500,7 +500,13 @@ cr.define('millix_bar', function() {
         update_version_link.removeClass('hidden');
 
         const href_current = update_version_link.attr('href');
-        update_version_link.attr('href', href_current + '?os_platform=' + version.os_platform);
+        const href_new     = href_current + '?os_platform=' + version.os_platform;
+        update_version_link.attr('href', href_new);
+
+        update_version_link.off('click').on('click', () => chrome.send('showMillixWallet', [
+            'new_tab',
+            href_new
+        ]));
     }
 
     // Return an object with all of the exports.
