@@ -23,6 +23,7 @@ cr.define('millix_bar', function() {
     let isDarkTheme                           = false;
 
     let auto_open_auth_page = true;
+    let private_key_exists  = undefined;
 
     function initialize() {
         refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
@@ -239,7 +240,11 @@ cr.define('millix_bar', function() {
         totalAdvertisementPaymentTimeout = setTimeout(() => updateTotalAdvertisementPayment(), 60000);
     }
 
-    function lockWallet(private_key_exists = true) {
+    function setPrivateKeyExist(value) {
+        private_key_exists = value;
+    }
+
+    function lockWallet() {
         walletLocked = true;
         updateNodeStat(null);
 
@@ -531,6 +536,7 @@ cr.define('millix_bar', function() {
         initialize,
         connectToWallet,
         lockWallet,
+        setPrivateKeyExist,
         restartWallet,
         unlockWallet,
         updateNodeStat,
@@ -564,6 +570,7 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'millix_session':
             if (data.data.api_status === 'fail') {
+                millix_bar.setPrivateKeyExist(data.data.private_key_exists);
                 chrome.send('updateMillixWallet', [
                     {
                         type    : 'wallet_update_state',
@@ -571,9 +578,10 @@ window.addEventListener('message', ({data}) => {
                         action  : {type: 'LOCK_WALLET'}
                     }
                 ]);
-                millix_bar.lockWallet(data.data.private_key_exists);
+                millix_bar.lockWallet();
             }
             else if (typeof (data.data.wallet) !== 'undefined') {
+                millix_bar.setPrivateKeyExist(true);
                 chrome.send('updateMillixWallet', [
                     {
                         type    : 'wallet_update_state',
