@@ -52,10 +52,15 @@ a {
     color: #a9a9a9;
 }
 
+.advertisement_bar_container .status_container,
+.advertisement_bar_container.status_message .status_area_right {
+    flex: 0 0 18rem;
+    max-width: 70rem;
+}
+
 .advertisement_bar_container.status_message .status_area_right {
     margin-left: 0;
     justify-content: flex-end;
-    flex: 0 0 18rem;
 }
 
 .message_container {
@@ -98,8 +103,6 @@ a {
 .advertisement_bar_container .status_container {
     display: flex;
     position: relative;
-    flex: 0 0 18rem;
-    max-width: 70rem;
 }
 
 .advertisement_bar_container .advertisement_container {
@@ -147,7 +150,6 @@ a {
     display: flex;
     align-items: center;
     margin-left: auto;
-    padding: 0 1rem;
 }
 
 input:focus {
@@ -159,7 +161,11 @@ svg {
     width: 1rem;
 }
 
-.status_area_right > *:not(:last-child) {
+.status_area_right > *:first-child {
+    margin-left: 1rem;
+}
+
+.status_area_right > * {
     margin-right: 1rem;
 }
 
