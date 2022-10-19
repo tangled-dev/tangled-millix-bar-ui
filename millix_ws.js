@@ -107,31 +107,19 @@ class _API {
             })); // in case of failed request (e.g. connection refused) it prevents app from crash
     }
 
-    getAuthenticatedURL() {
-        if (!this.nodeID || !this.nodeSignature) {
-            throw Error('api is not ready');
-        }
-        return `${_API.NODE_API}/${this.nodeID}/${this.nodeSignature}`;
-    }
-
-    getTangledURL() {
-        return `${_API.TANGLED_API}`;
-    }
-
     apiHealthCheck() {
         try {
             return fetch(`${_API.HOST}`)
                 .then(response => {
-                    if (this.apiHealthCheckFail >= 4) {
-                        send_window_parent_post_message('node_restarted');
-                    }
                     this.apiHealthCheckFail = 0;
+
                     return response.json();
                 }).catch(e => {
                     this.apiHealthCheckFail++;
                     if (this.apiHealthCheckFail === 4) {
                         send_window_parent_post_message('node_error');
                     }
+
                     throw e;
                 });
         }
@@ -141,123 +129,35 @@ class _API {
     }
 
     getLastTransaction(addressKeyIdentifier) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/FDLyQ5uo5t7jltiQ?p3=${addressKeyIdentifier}&p14=1`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    sendTransaction(transactionOutputPayload) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/XPzc85T3reYmGro1?p0=${JSON.stringify(transactionOutputPayload)}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    getTransactionHistory(addressKeyIdentifier) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/w9UTTA7NXnEDUXhe?p0=${addressKeyIdentifier}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiMillix('/FDLyQ5uo5t7jltiQ', {
+            'p3' : addressKeyIdentifier,
+            'p14': 1
+        });
     }
 
     getTransaction(transactionID, shardID) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/IBHgAmydZbmTUAe8?p0=${transactionID}&p1=${shardID}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiMillix('/IBHgAmydZbmTUAe8', {
+            'p0': transactionID,
+            'p1': shardID
+        });
     }
 
     getNodeStat() {
-        try {
-            return fetch(this.getAuthenticatedURL() + '/rKclyiLtHx0dx55M')
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    getRandomMnemonic() {
-        try {
-            return fetch(this.getAuthenticatedURL() + '/Gox4NzTLDnpEr10v')
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    getFreeOutputs(addressKeyIdentifier) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/FDLyQ5uo5t7jltiQ?p3=${addressKeyIdentifier}&p4=0&p7=1&p10=0`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    verifyAddress(address) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/Xim7SaikcsHICvfQ?p0=${address}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    newSessionWithPhrase(password, mnemonicPhrase) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/GktuwZlVP39gty6v?p0=${password}&p1=${mnemonicPhrase}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiMillix('/rKclyiLtHx0dx55M');
     }
 
     newSession(password) {
-        try {
-            return fetch(this.getAuthenticatedURL() + `/PMW9LXqUv7vXLpbA?p0=${password}`)
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiMillix('/PMW9LXqUv7vXLpbA', {
+            'p0': password
+        });
     }
 
     getSession() {
-        try {
-            return fetch(this.getAuthenticatedURL() + '/OBexeX0f0MsnL1S3')
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiMillix('/OBexeX0f0MsnL1S3');
     }
 
     getNextAdvertisementToRender() {
-        try {
-            return fetch(this.getTangledURL() + '/LMCqwVXTLS7VRWPT')
-                .then(response => response.json());
-        }
-        catch (e) {
-            return Promise.reject(e);
-        }
+        return this.fetchApiTangled('/LMCqwVXTLS7VRWPT');
     }
 
     getLastTransactionTimestamp() {
@@ -352,7 +252,16 @@ window.addEventListener('message', ({data}) => {
                        addressKeyIdentifier = data.wallet.address_key_identifier;
                    }
                    send_window_parent_post_message('millix_session', data);
-               }).catch(_ => setTimeout(() => window.postMessage({type: 'get_session'}), 1000));
+
+                   setTimeout(() => {
+                       window.postMessage({type: 'get_session'});
+                   }, 5000);
+               })
+               .catch(error => {
+                   setTimeout(() => {
+                       window.postMessage({type: 'get_session'});
+                   }, 1000);
+               });
             break;
         case 'new_session':
             API.newSession(data.password)

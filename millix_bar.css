@@ -47,14 +47,12 @@ a {
     color: #a9a9a9;
 }
 
-.advertisement_bar_container.status_warning,
-.advertisement_bar_container.status_danger {
+.advertisement_bar_container.status_message {
     background-color: #171827;
     color: #a9a9a9;
 }
 
-.advertisement_bar_container.status_warning .status_area_right,
-.advertisement_bar_container.status_danger .status_area_right {
+.advertisement_bar_container.status_message .status_area_right {
     margin-left: 0;
     justify-content: flex-end;
     flex: 0 0 18rem;
@@ -88,6 +86,11 @@ a {
     display: inline-block;
 }
 
+.status_danger .message_container .title {
+    display: none;
+}
+
+.status_danger .message_container .title.title_danger,
 .status_danger .message_container .note_danger {
     display: inline-block;
 }

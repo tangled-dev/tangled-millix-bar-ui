@@ -40,7 +40,8 @@
                       </path>
                     </g>
                   </svg>
-                <span>login</span>
+                <span class="state_dependent state_login_required">login</span>
+                <span class="state_dependent state_create_required">create wallet</span>
             </div>
             <div id="wallet_restart" class="wallet_control btn btn-outline-primary labeled hidden">
                 <svg class="wallet_restart_icon_power" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="power-off"
@@ -66,7 +67,8 @@
                             class="fa-primary"/>
                 </svg>
 
-                <span class="label">restart node</span>
+                <span class="label state_dependent state_node_restart">restart service<span class="counter"></span></span>
+                <span class="label state_dependent state_node_restart_in_progress">restarting</span>
             </div>
 
             <div id="wallet" class="advertisement_bar_item hidden">
@@ -161,9 +163,9 @@
         <div><a class="advertisement_deck"></a></div>
     </div>
     <div id="message_container" class="message_container hidden">
-        <span class="title">you are not getting paid</span>
-        <span class="note note_warning">login to start earning</span>
-        <span class="note note_danger">try to click restart button on the left. you may need to restart application</span>
+        <span class="title state_dependent state_login_required">login to start earning</span>
+        <span class="title state_dependent state_create_required hidden">create wallet to start earning</span>
+        <span class="title state_dependent state_node_restart title_danger hidden">the millix service stopped unexpectedly</span>
     </div>
 
     <div class="status_area_right">

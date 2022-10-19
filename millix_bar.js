@@ -22,6 +22,8 @@ cr.define('millix_bar', function() {
     let sessionStart                          = undefined;
     let isDarkTheme                           = false;
 
+    let auto_open_auth_page = true;
+
     function initialize() {
         refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
 
@@ -237,6 +239,41 @@ cr.define('millix_bar', function() {
         totalAdvertisementPaymentTimeout = setTimeout(() => updateTotalAdvertisementPayment(), 60000);
     }
 
+    function lockWallet(private_key_exists = true) {
+        walletLocked = true;
+        updateNodeStat(null);
+
+        let advertisement_bar_container_status;
+
+        if (private_key_exists === false) {
+            advertisement_bar_container_status = '';
+            set_state('create_required');
+        }
+        else {
+            advertisement_bar_container_status = 'warning';
+            set_state('login_required');
+        }
+
+        show_wallet_pending_control(advertisement_bar_container_status);
+
+        send_api_frame_content_window_post_message('read_stat_stop');
+        disableAdvertisementFetch();
+
+        if (auto_open_auth_page) {
+            showMillixWallet();
+            auto_open_auth_page = false;
+        }
+    }
+
+    function show_wallet_pending_control(advertisement_bar_container_status) {
+        $('#wallet').addClass('hidden');
+        $('#btn_expand_status_area').addClass('hidden');
+        $('#wallet_restart').addClass('hidden');
+
+        $('#wallet_unlock').removeClass('hidden');
+        set_advertisement_bar_container_status(advertisement_bar_container_status);
+    }
+
     function unlockWallet() {
         if (!walletLocked) {
             return;
@@ -251,7 +288,8 @@ cr.define('millix_bar', function() {
 
         show_wallet_active_control();
 
-        walletLocked = false;
+        walletLocked        = false;
+        auto_open_auth_page = true;
         updateNodeStat(null);
 
         if (unlockFromBar) {
@@ -274,54 +312,6 @@ cr.define('millix_bar', function() {
         set_advertisement_bar_container_status('success');
     }
 
-    function set_advertisement_bar_container_status(status) {
-        $('#advertisement_container').removeClass('hidden');
-        $('#message_container').addClass('hidden');
-        $('.advertisement_bar_container').removeClass('status_warning status_danger');
-        if (status === 'danger') {
-            toggle_status_area(false);
-
-            $('.advertisement_bar_container').addClass('status_danger');
-            $('#advertisement_container').addClass('hidden');
-            $('#message_container').removeClass('hidden');
-        }
-        else if (status === 'warning') {
-            toggle_status_area(false);
-            $('.advertisement_bar_container').addClass('status_warning');
-            $('#advertisement_container').addClass('hidden');
-            $('#message_container').removeClass('hidden');
-        }
-    }
-
-    function deactivateWallet() {
-        walletLocked = true;
-        updateNodeStat(null);
-        show_wallet_pending_control();
-
-        send_api_frame_content_window_post_message('read_stat_stop');
-        disableAdvertisementFetch();
-    }
-
-    function show_wallet_pending_control() {
-        $('#wallet').addClass('hidden');
-        $('#btn_expand_status_area').addClass('hidden');
-        $('#wallet_restart').addClass('hidden');
-
-        $('#wallet_unlock').removeClass('hidden');
-        set_advertisement_bar_container_status('warning');
-    }
-
-    function doNodeRestart() {
-        if (!$('#wallet_restart').hasClass('btn-disabled')) {
-            clearTimeout(reloadTimeout);
-            $('.wallet_restart_icon_power').addClass('hidden');
-            $('.wallet_restart_icon_loader').removeClass('hidden');
-            $('#wallet_restart').addClass('btn-disabled');
-            $('#wallet_restart .label').text('restarting');
-            chrome.send('restartMillixNode');
-        }
-    }
-
     function restartWallet() {
         refreshMillixWallet();
         updateNodeStat(null);
@@ -331,7 +321,7 @@ cr.define('millix_bar', function() {
 
         let counter                = 10;
         const updateRestartTimeout = () => {
-            $('#wallet_restart .label').text(`restart node (${counter}s)`);
+            $('#wallet_restart .label .counter').text(` (${counter}s)`);
             counter--;
             if (counter == 0) {
                 doNodeRestart();
@@ -354,14 +344,41 @@ cr.define('millix_bar', function() {
         $('.wallet_restart_icon_loader').addClass('hidden');
         $('#wallet_restart').removeClass('btn-disabled').removeClass('hidden');
         set_advertisement_bar_container_status('danger');
+
+        set_state('node_restart');
+    }
+
+    function set_advertisement_bar_container_status(status) {
+        $('#advertisement_container').removeClass('hidden');
+        $('#message_container').addClass('hidden');
+        $('.advertisement_bar_container').removeClass('status_message status_warning status_danger');
+
+        if (status !== 'success') {
+            toggle_status_area(false);
+            $('.advertisement_bar_container').addClass('status_message status_' + status);
+            $('#advertisement_container').addClass('hidden');
+            $('#message_container').removeClass('hidden');
+        }
+    }
+
+    function doNodeRestart() {
+        if (!$('#wallet_restart').hasClass('btn-disabled')) {
+            clearTimeout(reloadTimeout);
+            $('.wallet_restart_icon_power').addClass('hidden');
+            $('.wallet_restart_icon_loader').removeClass('hidden');
+            $('#wallet_restart').addClass('btn-disabled');
+            set_state('node_restart_in_progress');
+            chrome.send('restartMillixNode');
+        }
+    }
+
+    function set_state(state) {
+        $('.state_dependent').addClass('hidden');
+        $('.state_' + state).removeClass('hidden');
     }
 
     function updateNodeStat(nodeStat) {
-        if (walletLocked && nodeStat) {
-            return;
-        }
-
-        if (!nodeStat) {
+        if (walletLocked || !nodeStat) {
             $('#balance_stable').text('');
             $('#balance_pending').text('');
             $('#peer_count').text('');
@@ -378,24 +395,6 @@ cr.define('millix_bar', function() {
             $('#log_count').text(nodeStat.log.log_count.toLocaleString());
             $('#backlog_count').text(nodeStat.log.backlog_count.toLocaleString());
             $('#transaction_count').text(nodeStat.transaction.transaction_wallet_count.toLocaleString());
-        }
-    }
-
-    function onMillixBarMessage(data) {
-        console.log('[onMillixBarMessage] ', data);
-        if (data.type === 'wallet_update_state') {
-            if (data.action.type === 'UNLOCK_WALLET') {
-                unlockWallet();
-            }
-            else if (data.action.type === 'LOCK_WALLET') {
-                deactivateWallet();
-            }
-            else if (data.action.type === 'UPDATE_NOTIFICATION_VOLUME') {
-                changeVolume(data.action.payload);
-            }
-        }
-        else if (data.type === 'api_config_update') {
-            connectToWallet(data.config);
         }
     }
 
@@ -513,10 +512,9 @@ cr.define('millix_bar', function() {
     return {
         initialize,
         connectToWallet,
-        deactivateWallet,
+        lockWallet,
         restartWallet,
         unlockWallet,
-        onMillixBarMessage,
         updateNodeStat,
         onApiFrameReady,
         onLastTransactionUpdate,
@@ -554,9 +552,9 @@ window.addEventListener('message', ({data}) => {
                         action  : {type: 'LOCK_WALLET'}
                     }
                 ]);
-                millix_bar.deactivateWallet();
+                millix_bar.lockWallet(data.data.private_key_exists);
             }
-            else {
+            else if (typeof (data.data.wallet) !== 'undefined') {
                 chrome.send('updateMillixWallet', [
                     {
                         type    : 'wallet_update_state',
@@ -572,9 +570,6 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'node_error':
             millix_bar.restartWallet();
-            break;
-        case 'node_restarted':
-            millix_bar.deactivateWallet();
             break;
         case 'initialize':
             chrome.send('initialize', []);
