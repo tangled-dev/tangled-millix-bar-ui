@@ -398,6 +398,24 @@ cr.define('millix_bar', function() {
         }
     }
 
+    // onMillixBarMessage is being used to receive data from chromium c++ core
+    function onMillixBarMessage(data) {
+        if (data.type === 'wallet_update_state') {
+            if (data.action.type === 'UNLOCK_WALLET') {
+                unlockWallet();
+            }
+            else if (data.action.type === 'LOCK_WALLET') {
+                lockWallet();
+            }
+            else if (data.action.type === 'UPDATE_NOTIFICATION_VOLUME') {
+                changeVolume(data.action.payload);
+            }
+        }
+        else if (data.type === 'api_config_update') {
+            connectToWallet(data.config);
+        }
+    }
+
     function onLastTransactionUpdate(lastTransaction) {
         if (walletLocked) {
             return;
@@ -525,6 +543,7 @@ cr.define('millix_bar', function() {
         onTransaction,
         showNewAdvertisement,
         onVisibilityChange,
+        onMillixBarMessage,
         updateVersion
     };
 });
