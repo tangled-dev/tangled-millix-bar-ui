@@ -75,6 +75,10 @@ a {
     font-size: 1.3rem;
 }
 
+.status_message .message_container .title {
+    color: #ffffff;
+}
+
 .status_warning .message_container .title {
     color: #f7af3e;
 }
