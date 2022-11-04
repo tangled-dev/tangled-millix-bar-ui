@@ -518,17 +518,19 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        const update_version_link = $('.update_version_link');
-        update_version_link.removeClass('hidden');
+        if (version.version_available >= version.node_millix_version) {
+            const update_version_link = $('.update_version_link');
+            update_version_link.removeClass('hidden');
 
-        const href_current = update_version_link.attr('href');
-        const href_new     = href_current + '?os_platform=' + version.os_platform;
-        update_version_link.attr('href', href_new);
+            const href_current = update_version_link.attr('href');
+            const href_new     = href_current + '?os_platform=' + version.os_platform + '&os_arch=' + version.os_arch;
+            update_version_link.attr('href', href_new);
 
-        update_version_link.off('click').on('click', () => chrome.send('showMillixWallet', [
-            'new_tab',
-            href_new
-        ]));
+            update_version_link.off('click').on('click', () => chrome.send('showMillixWallet', [
+                'new_tab',
+                href_new
+            ]));
+        }
     }
 
     // Return an object with all of the exports.
