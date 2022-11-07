@@ -518,7 +518,7 @@ cr.define('millix_bar', function() {
             return;
         }
 
-        if (version.version_available >= version.node_millix_version) {
+        if (version.version_available > version.node_millix_version) {
             const update_version_link = $('.update_version_link');
             update_version_link.removeClass('hidden');
 
