@@ -518,8 +518,8 @@ cr.define('millix_bar', function() {
             return;
         }
 
+        const update_version_link = $('.update_version_link');
         if (version.version_available > version.node_millix_version) {
-            const update_version_link = $('.update_version_link');
             update_version_link.removeClass('hidden');
 
             const href_origin = update_version_link.data('href_origin');
@@ -530,6 +530,10 @@ cr.define('millix_bar', function() {
                 'new_tab',
                 href_new
             ]));
+        }
+        else
+        {
+            update_version_link.addClass('hidden');
         }
     }
 
