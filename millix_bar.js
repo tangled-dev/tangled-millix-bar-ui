@@ -522,8 +522,8 @@ cr.define('millix_bar', function() {
             const update_version_link = $('.update_version_link');
             update_version_link.removeClass('hidden');
 
-            const href_current = update_version_link.attr('href');
-            const href_new     = href_current + '?os_platform=' + version.os_platform + '&os_arch=' + version.os_arch;
+            const href_origin = update_version_link.data('href_origin');
+            const href_new    = href_origin + '?os_platform=' + version.os_platform + '&os_arch=' + version.os_arch;
             update_version_link.attr('href', href_new);
 
             update_version_link.off('click').on('click', () => chrome.send('showMillixWallet', [
