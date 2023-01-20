@@ -1,8 +1,7 @@
+import { addWebUiListener } from 'tangled://resources/js/cr.js'
 let CHILD_FRAME_ID = typeof (config.child_frame_id) !== 'undefined' ? config.child_frame_id : 'chrome-untrusted://millix-ws/';
 
-cr.define('millix_bar', function() {
-    'use strict';
-
+window.millix_bar = new function() {
     let millixAPIFrame;
     let lastKnownTransaction                  = undefined;
     let reloadTimeout                         = undefined;
@@ -28,6 +27,7 @@ cr.define('millix_bar', function() {
     function initialize() {
         refreshThemeStyles({is_dark_theme: loadTimeData.getBoolean('is_dark_theme')});
 
+        millixAPIFrame = document.getElementById('frame_millix_api');
         $('#wallet').click(() => showMillixWallet());
         $('#wallet_unlock').click(() => showMillixWallet());
         $('#wallet_network').click(() => chrome.send('showMillixWallet', ['peers']));
@@ -38,7 +38,7 @@ cr.define('millix_bar', function() {
             doNodeRestart();
         });
 
-        cr.addWebUIListener('onThemeChanged', refreshThemeStyles.bind(this));
+        addWebUiListener('onThemeChanged', refreshThemeStyles.bind(this));
     }
 
     function refreshThemeStyles(data) {
@@ -50,10 +50,6 @@ cr.define('millix_bar', function() {
         }
 
         isDarkTheme = data.is_dark_theme;
-    }
-
-    function onApiFrameReady() {
-        millixAPIFrame = document.getElementById('frame_millix_api');
     }
 
     function send_api_frame_content_window_post_message(type, data = null) {
@@ -359,7 +355,7 @@ cr.define('millix_bar', function() {
         $('.advertisement_bar_container').removeClass('status_message status_warning status_danger');
 
         if (status !== 'success') {
-            toggle_status_area(false);
+            toggleStatusArea(false);
             $('.advertisement_bar_container').addClass('status_message status_' + status);
             $('#advertisement_container').addClass('hidden');
             $('#message_container').removeClass('hidden');
@@ -477,7 +473,7 @@ cr.define('millix_bar', function() {
         audioDeposit.play();
     }
 
-    function toggle_status_area(show) {
+    function toggleStatusArea(show) {
         if (show) {
             $('#btn_expand_status_area').addClass('open');
             $('.expandable_view').removeClass('hidden');
@@ -546,19 +542,18 @@ cr.define('millix_bar', function() {
         restartWallet,
         unlockWallet,
         updateNodeStat,
-        onApiFrameReady,
         onLastTransactionUpdate,
         onLastTransactionTimestampUpdate,
         onTotalAdvertisementPaymentUpdate,
         refreshThemeStyles,
-        toggle_status_area,
+        toggleStatusArea,
         onTransaction,
         showNewAdvertisement,
         onVisibilityChange,
         onMillixBarMessage,
         updateVersion
     };
-});
+};
 
 window.addEventListener('message', ({data}) => {
     switch (data.type) {
@@ -619,18 +614,18 @@ window.addEventListener('message', ({data}) => {
 
 });
 
-document.addEventListener('DOMContentLoaded', millix_bar.initialize);
-
-document.addEventListener('visibilitychange', millix_bar.onVisibilityChange);
-
 $(document).ready(() => {
+    document.addEventListener('visibilitychange', millix_bar.onVisibilityChange);
+
     $('#btn_expand_status_area').click(function() {
         const $this = $(this);
         if ($this.hasClass('open')) {
-            millix_bar.toggle_status_area(false);
+            millix_bar.toggleStatusArea(false);
         }
         else {
-            millix_bar.toggle_status_area(true);
+            millix_bar.toggleStatusArea(true);
         }
     });
+
+    millix_bar.initialize();
 });

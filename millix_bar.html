@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>millix wallet</title>
     <link rel="stylesheet" href="millix_bar.css">
-    <script src="tangled://resources/js/cr.js" onerror="return true;"></script>
+    <script src="tangled://resources/js/cr.js" type="module"></script>
     <script src="tangled://resources/js/load_time_data_deprecated.js"></script>
     <script src="vendor/jquery.js"></script>
     <script src="vendor/jquery.nicescroll.js"></script>
@@ -13,7 +13,7 @@
     <!-- import of strings.js is a requirement the loadtimedata library -->
     <script src="strings.js"></script>
     <script src="config.js"></script>
-    <script src="millix_bar.js"></script>
+    <script src="millix_bar.js" type="module"></script>
 </head>
 
 <body class="noselect">
@@ -179,7 +179,7 @@
         </a>
     </div>
 </div>
-<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden" onload="millix_bar.onApiFrameReady()"></iframe>
+<iframe id="frame_millix_api" src="chrome-untrusted://millix-ws/" class="hidden"></iframe>
 </body>
 
 </html>
