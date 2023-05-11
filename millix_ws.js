@@ -57,7 +57,7 @@ class _API {
             }
             else {
                 const form_data = new FormData();
-                _.each(_.keys(result_param), key => {
+                Object.keys(result_param).forEach( key => {
                     if (result_param[key] instanceof File) {
                         form_data.append(key, result_param[key]);
                         return;
@@ -75,9 +75,9 @@ class _API {
             let param_string = '';
             if (result_param) {
                 const param_array = [];
-                Object.keys(result_param).forEach(function(param_key) {
+                Object.keys(result_param).forEach(param_key => {
                     let value = result_param[param_key];
-                    if (_.isArray(value) || typeof (value) === 'object') {
+                    if (Array.isArray(value) || typeof (value) === 'object') {
                         value = encodeURIComponent(JSON.stringify(value));
                     }
 
