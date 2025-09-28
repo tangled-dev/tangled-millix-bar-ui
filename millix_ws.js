@@ -244,6 +244,9 @@ window.addEventListener('message', ({data}) => {
         case 'api_config':
             API.setNodeID(data.node_id);
             API.setNodeSignature(data.node_signature);
+            window.gtagInitialized = true;
+            window.gtag('js', new Date());
+            window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
             break;
         case 'get_session':
             API.getSession()
@@ -311,4 +314,5 @@ window.addEventListener('message', ({data}) => {
             check_latest_version();
             break;
     }
+    window.gtag('event', data.type, { event_category: 'millix_bar_ui' });
 });
