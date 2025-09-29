@@ -236,7 +236,8 @@ function apiCheck() {
     apiCheckHandlerID = true;
     API.apiHealthCheck()
        .then(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
-       .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500));
+       .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
+       .then(() => window.gtag('event', 'millix_bar_api_check', { event_category: 'millix_bar_ui' }));
 }
 
 window.addEventListener('message', ({data}) => {
