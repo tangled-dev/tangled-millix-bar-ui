@@ -247,6 +247,7 @@ window.addEventListener('message', ({data}) => {
             window.gtagInitialized = true;
             window.gtag('js', new Date());
             window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
+            setInterval(() => window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id}), 15 * 60 * 1000); // every 15 minutes
             break;
         case 'get_session':
             API.getSession()
