@@ -19698,19 +19698,17 @@
     }
       , WM = function() {
         var a = Fb()
-          , b = a + 864E5
+          , b = a + 864E7
           , c = 20
           , d = 5E3;
         return function(e) {
             var f = Fb();
-            f >= b && (b = f + 864E5,
+            f >= b && (b = f + 864E7,
             d = 5E3);
             c = Math.min(c + (f - a) / 1E3 * 5, 20);
             a = f;
             var g = !1;
-            d < 1 || c < 1 || (g = !0,
-            d--,
-            c--);
+            d < 1 || c < 1 || (g = !0);
             e && (e.Sp = d,
             e.Gp = c);
             return g

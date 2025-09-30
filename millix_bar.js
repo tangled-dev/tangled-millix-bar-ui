@@ -432,10 +432,7 @@ window.millix_bar = new function() {
 
         // check if we should notify user
         lastKnownTransaction = lastTransaction;
-        send_api_frame_content_window_post_message('get_transaction', {
-            transaction_id: lastKnownTransaction.transaction_id,
-            shard_id      : lastKnownTransaction.shard_id
-        });
+        onTransactionAudioEffect()
     }
 
     function onLastTransactionTimestampUpdate(data) {
@@ -464,11 +461,11 @@ window.millix_bar = new function() {
         audioDeposit.volume = volume;
     }
 
-    function onTransaction(transaction) {
+    function onTransactionAudioEffect() {
         if (walletLocked) {
             return;
         }
-        // check if we should notify user
+        // play sound
         audioDeposit.currentTime = 0;
         audioDeposit.play();
     }
@@ -547,7 +544,7 @@ window.millix_bar = new function() {
         onTotalAdvertisementPaymentUpdate,
         refreshThemeStyles,
         toggleStatusArea,
-        onTransaction,
+        onTransactionAudioEffect,
         showNewAdvertisement,
         onVisibilityChange,
         onMillixBarMessage,
@@ -565,9 +562,6 @@ window.addEventListener('message', ({data}) => {
             break;
         case 'total_advertisement_payment':
             millix_bar.onTotalAdvertisementPaymentUpdate(data.data);
-            break;
-        case 'new_transaction':
-            millix_bar.onTransaction(data.data);
             break;
         case 'millix_session':
             if (data.data.api_status === 'fail') {

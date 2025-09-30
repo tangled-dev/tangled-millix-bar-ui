@@ -194,6 +194,22 @@ function send_window_parent_post_message(type, data = null) {
     }, get_parent_frame_id());
 }
 
+const statistics = {
+    last_ad_timestamp: 0,
+    total_ad_payment: 0,
+    check_latest_version_count: 0,
+    session_check_count: 0,
+    api_check_count: 0,
+    api_config_count: 0,
+    new_session_count: 0,
+    read_stats_start_count: 0,
+    read_stats_stop_count: 0,
+    find_ad_count: 0,
+    new_ad_count: 0,
+    new_transaction_count: 0
+}
+let lastTransaction = null;
+
 function readStat() {
     clearTimeout(readStatHandlerID);
     API.getNodeStat()
@@ -206,7 +222,13 @@ function readStat() {
                              if (data.wallet) {
                                  addressKeyIdentifier = data.wallet.address_key_identifier;
                                  return API.getLastTransaction(addressKeyIdentifier)
-                                           .then(data => send_window_parent_post_message('last_transaction', data[0]));
+                                           .then(data => {
+                                                if(lastTransaction && data[0] && lastTransaction.transaction_id !== data[0].transaction_id) {
+                                                    statistics.new_transaction_count++;
+                                                }
+                                                lastTransaction = data[0];
+                                                send_window_parent_post_message('last_transaction', lastTransaction)
+                                            });
                              }
                          });
            }
@@ -233,24 +255,31 @@ function check_latest_version() {
 let apiCheckHandlerID = null;
 
 function apiCheck() {
+    statistics.api_check_count++;
     apiCheckHandlerID = true;
     API.apiHealthCheck()
        .then(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
-       .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
-       .then(() => window.gtag('event', 'millix_bar_api_check', { event_category: 'millix_bar_ui' }));
+       .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500));
 }
 
 window.addEventListener('message', ({data}) => {
     switch (data.type) {
         case 'api_config':
+            statistics.api_config_count++;
             API.setNodeID(data.node_id);
             API.setNodeSignature(data.node_signature);
+            if(!window.gtagInitialized) {
+                setInterval(() => {
+                    window.gtag('event', 'browser_statistics', { event_category: 'millix_bar_ui', ...statistics });
+                }, 5 * 1000); // every 10 seconds
+            }
             window.gtagInitialized = true;
             window.gtag('js', new Date());
             window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
             setInterval(() => window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id}), 15 * 60 * 1000); // every 15 minutes
             break;
         case 'get_session':
+            statistics.session_check_count++;
             API.getSession()
                .then(data => {
                    if (data.wallet) {
@@ -269,6 +298,7 @@ window.addEventListener('message', ({data}) => {
                });
             break;
         case 'new_session':
+            statistics.new_session_count++;
             API.newSession(data.password)
                .then(data => {
                    if (data.wallet) {
@@ -284,27 +314,39 @@ window.addEventListener('message', ({data}) => {
                });
             break;
         case 'get_last_transaction_timestamp':
-            API.getLastTransactionTimestamp()
-               .then(data => send_window_parent_post_message('last_transaction_timestamp', data));
+            API.getLastTransactionTimestamp().then(data => {
+                statistics.last_ad_timestamp = data.timestamp || 0;   
+                send_window_parent_post_message('last_transaction_timestamp', data)
+            });
             break;
         case 'get_total_advertisement_payment':
-            API.getTotalAdvertismentPayment()
-               .then(data => send_window_parent_post_message('total_advertisement_payment', data));
+            API.getTotalAdvertismentPayment().then(data => {
+                statistics.total_ad_payment = data.total || 0;
+                send_window_parent_post_message('total_advertisement_payment', data)
+            });
             break;
         case 'read_stat_start':
             if (!readStatHandlerID) {
+                statistics.read_stats_start_count++;
                 readStat();
             }
             break;
         case 'read_stat_stop':
             if (readStatHandlerID) {
+                statistics.read_stats_stop_count++;
                 clearTimeout(readStatHandlerID);
                 readStatHandlerID = null;
             }
             break;
         case 'get_next_tangled_advertisement':
+            statistics.find_ad_count++;
             API.getNextAdvertisementToRender()
-               .then(data => send_window_parent_post_message('next_tangled_advertisement', data))
+               .then(data => {
+                    if(!!data.advertisement_url) {
+                        statistics.new_ad_count++;
+                    }
+                    send_window_parent_post_message('next_tangled_advertisement', data);
+               })
                .catch(() => send_window_parent_post_message('next_tangled_advertisement'));
             break;
         case 'api_check':
@@ -313,8 +355,8 @@ window.addEventListener('message', ({data}) => {
             }
             break;
         case 'start_check_latest_version':
+            statistics.check_latest_version_count++;
             check_latest_version();
             break;
     }
-    window.gtag('event', data.type, { event_category: 'millix_bar_ui' });
 });
