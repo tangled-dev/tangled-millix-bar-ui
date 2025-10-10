@@ -188,6 +188,8 @@ class _API {
 
 const API = new _API();
 
+const CONFIG_NOTIFICATION_VOLUME_ID = 'DsaxTzsnWvByspwtNX7t';
+
 document.addEventListener('DOMContentLoaded', () => {
     send_window_parent_post_message('initialize');
 });
@@ -265,6 +267,7 @@ function check_latest_version() {
 }
 
 let apiCheckHandlerID = null;
+let apiUpdateNotificationVolumeHandlerID = null;
 
 function apiCheck() {
     statistics.api_check_count++;
@@ -272,6 +275,16 @@ function apiCheck() {
     API.apiHealthCheck()
        .then(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500))
        .catch(() => apiCheckHandlerID = setTimeout(() => apiCheck(), 2500));
+}
+
+function updateNotificationVolume() {
+    apiUpdateNotificationVolumeHandlerID = true;
+    API.getConfig(CONFIG_NOTIFICATION_VOLUME_ID)
+        .then(data => {
+            send_window_parent_post_message('update_notification_volume', {volume: parseInt(data.value)});
+            apiUpdateNotificationVolumeHandlerID = setTimeout(() => updateNotificationVolume(), 10000)
+        })
+        .catch(() => apiUpdateNotificationVolumeHandlerID = setTimeout(() => updateNotificationVolume(), 10000));
 }
 
 window.addEventListener('message', ({data}) => {
@@ -289,12 +302,17 @@ window.addEventListener('message', ({data}) => {
             window.gtag('js', new Date());
             window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
             setInterval(() => window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id}), 15 * 60 * 1000); // every 15 minutes
+
+            if (!apiUpdateNotificationVolumeHandlerID) {
+                updateNotificationVolume();
+            }
+
             break;
         case 'update_notification_volume':
-            API.upsertConfig('DsaxTzsnWvByspwtNX7t', 'notification_volume', data.volume)
+            API.upsertConfig(CONFIG_NOTIFICATION_VOLUME_ID, 'notification_volume', data.volume)
             break;
         case 'get_notification_volume':
-            API.getConfig('DsaxTzsnWvByspwtNX7t')
+            API.getConfig(CONFIG_NOTIFICATION_VOLUME_ID)
                .then(data => {
                    send_window_parent_post_message('update_notification_volume', {volume: parseInt(data.value)});
                });
