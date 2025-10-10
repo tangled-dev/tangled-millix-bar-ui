@@ -410,6 +410,7 @@ window.millix_bar = new function() {
             }
             else if (data.action.type === 'UPDATE_NOTIFICATION_VOLUME') {
                 changeVolume(data.action.payload);
+                send_api_frame_content_window_post_message('update_notification_volume', data.action.payload);
             }
         }
         else if (data.type === 'api_config_update') {
@@ -548,6 +549,7 @@ window.millix_bar = new function() {
         showNewAdvertisement,
         onVisibilityChange,
         onMillixBarMessage,
+        changeVolume,
         updateVersion
     };
 };
@@ -604,6 +606,9 @@ window.addEventListener('message', ({data}) => {
             const version = data.data;
             millix_bar.updateVersion(version);
             break;
+        case 'update_notification_volume':
+            millix_bar.changeVolume(data.data);
+            break
     }
 
 });

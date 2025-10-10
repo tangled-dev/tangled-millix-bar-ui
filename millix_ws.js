@@ -171,6 +171,18 @@ class _API {
     getLatestMillixVersion() {
         return this.fetchApiMillix('/WGem8x5aycBqFXWQ');
     }
+
+    getConfig(configId) {
+        return this.fetchApiMillix(`/NEyHaRrWm5Emw2GZ?p0=${configId}`);
+    }
+
+    upsertConfig(configId, configName, value) {
+        return this.fetchApiMillix(`/AXVeQ29Zcz5gVxKJ`, {
+            p0: configId,
+            p1: configName,
+            p2: value
+        }, 'POST');
+    }
 }
 
 
@@ -277,6 +289,15 @@ window.addEventListener('message', ({data}) => {
             window.gtag('js', new Date());
             window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
             setInterval(() => window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id}), 15 * 60 * 1000); // every 15 minutes
+            break;
+        case 'update_notification_volume':
+            API.upsertConfig('DsaxTzsnWvByspwtNX7t', 'notification_volume', data.volume)
+            break;
+        case 'get_notification_volume':
+            API.getConfig('DsaxTzsnWvByspwtNX7t')
+               .then(data => {
+                   send_window_parent_post_message('update_notification_volume', {volume: parseInt(data.value)});
+               });
             break;
         case 'get_session':
             statistics.session_check_count++;
