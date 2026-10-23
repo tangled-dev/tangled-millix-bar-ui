@@ -15,10 +15,12 @@
       
       window.dataLayer = window.dataLayer || [];
 
+      // calls made before the node id is known are queued, so every hit carries it
+      window.gtagQueue = [];
       window.gtagInitialized = false;
 
       function gtag() {
-          window.gtagInitialized && dataLayer.push(arguments);
+          window.gtagInitialized ? dataLayer.push(arguments) : gtagQueue.push(arguments);
       }
   </script>
 </head>

@@ -287,21 +287,49 @@ function updateNotificationVolume() {
         .catch(() => apiUpdateNotificationVolumeHandlerID = setTimeout(() => updateNotificationVolume(), 10000));
 }
 
-window.addEventListener('message', ({data}) => {
+// every hit must carry the node id (browser id), otherwise gtag.js makes up a
+// random client id and the browser is counted as a new user
+const GA_MEASUREMENT_ID = 'G-57CQ9Y8LPV';
+let gtagNodeID;
+
+function configGTag() {
+    window.gtag('config', GA_MEASUREMENT_ID, {
+        client_id: gtagNodeID,
+        user_id  : gtagNodeID
+    });
+}
+
+function initGTag(nodeID) {
+    if (!nodeID || nodeID === gtagNodeID) {
+        return false;
+    }
+    const firstInit = !gtagNodeID;
+    gtagNodeID      = nodeID;
+    if (firstInit) {
+        window.gtagInitialized = true;
+        window.gtag('js', new Date());
+    }
+    configGTag();
+    if (firstInit) {
+        window.gtagQueue.splice(0).forEach(args => window.dataLayer.push(args));
+        setInterval(configGTag, 15 * 60 * 1000); // every 15 minutes
+    }
+    return firstInit;
+}
+
+window.addEventListener('message', (e) => {
+    const {data} = e;
     switch (data.type) {
         case 'api_config':
             statistics.api_config_count++;
             API.setNodeID(data.node_id);
             API.setNodeSignature(data.node_signature);
-            if(!window.gtagInitialized) {
+            // the bar can send an empty node id before node.json is read; initGTag ignores it
+            if (e.source === window.parent && initGTag(data.node_id)) {
                 setInterval(() => {
-                    window.gtag('event', 'browser_statistics', { event_category: 'millix_bar_ui', ...statistics });
-                }, 5 * 1000); // every 10 seconds
+                    window.gtag('event', 'browser_statistics', {event_category: 'millix_bar_ui', ...statistics});
+                }, 5 * 60 * 1000); // every 5 minutes
             }
-            window.gtagInitialized = true;
-            window.gtag('js', new Date());
-            window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id});
-            setInterval(() => window.gtag('config', 'G-57CQ9Y8LPV', {client_id: data.node_id}), 15 * 60 * 1000); // every 15 minutes
 
             if (!apiUpdateNotificationVolumeHandlerID) {
                 updateNotificationVolume();
